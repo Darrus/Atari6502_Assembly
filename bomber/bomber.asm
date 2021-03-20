@@ -110,6 +110,20 @@ StartFrame:
     sta VBLANK              ; turn of VBLANK
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Display the scoreboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda #0                  ; clear TIA registers before each new frame
+    sta PF0
+    sta PF1
+    sta PF2
+    sta GRP0
+    sta GRP1
+    sta COLUPF
+    REPEAT 20
+        sta WSYNC           ; display 20 scanlines for scoreboard
+    REPEND
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 96 visible scanlines for main game (because 2-line kernel)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameVisibleLine:
@@ -130,7 +144,7 @@ GameVisibleLine:
     lda #0
     sta PF2
 
-    ldx #96                ; X counts the number of remaining scanlines
+    ldx #84                ; X counts the number of remaining scanlines
 
 .GameLineLoop:              ; . has no special meaning, tutor uses it to indicate that this segment is within the above segment
 .AreWeInsideJetSprite:
@@ -237,8 +251,28 @@ UpdateBomberPosition:
 .ResetBomberPosition
     jsr GetRandomBomberPos   ; call subroutine for random x-position
 EndPositionUpdate:
-   
-    jmp StartFrame           ; loop back to next frame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check for object collision
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CheckCollisionP0P1:
+    lda #%10000000
+    bit CXPPMM              ; check CXPPMM bit 7 with the above pattern
+    bne .CollisionP0P1      ; if collided, game obver 
+    jmp CheckCollisionP0PF  ; else, skip to next check
+.CollisionP0P1:
+    jsr GameOver            ; call GameOver subroutine
+CheckCollisionP0PF:
+    lda #%10000000
+    bit CXP0FB              ; if collision 
+    bne .CollisionP0PF
+    jmp EndCollisionCheck
+.CollisionP0PF
+    jsr GameOver            ; call Game
+EndCollisionCheck:
+    sta CXCLR               ; clear all collision checks
+
+    jmp StartFrame          ; loop back to next frame
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subroutine to handle object horizontal position
@@ -260,9 +294,19 @@ SetObjectXPos subroutine
     sta HMP0,Y              ; store the fine offset to the correct HMxx
     sta RESP0,Y             ; fix object position in 15-step increment
     rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Game Over subroutine
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GameOver subroutine
+    lda #$30
+    sta COLUBK
+    ;lda #0
+    ;sta Score
+    rts
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subroutine to generate a Linear-Feedback Shift Resgistar random number
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GetRandomBomberPos subroutine
     lda Random
