@@ -21,7 +21,7 @@ JetColorPtr word           ; pointer to player0 color lookup table
 BomberSpritePtr word       ; pointer to player1 sprite lookup table
 BomberColorPtr word        ; pointer to player1 color lookup table
 JetAnimOffset byte         ; Player sprite frame offset for animation
-
+Random byte                ; random number generated to set enemy position
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,6 +48,9 @@ Reset:
     sta BomberYPos
     lda #60
     sta BomberXPos
+
+    lda #%11010100
+    sta Random
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize pointers to the correct lookup table addresses
@@ -232,8 +235,7 @@ UpdateBomberPosition:
     dec BomberYPos           ; else decrement y-position
     jmp EndPositionUpdate    ; jump to EndPositionUpdate to bypass reset
 .ResetBomberPosition
-    lda #96
-    sta BomberYPos
+    jsr GetRandomBomberPos   ; call subroutine for random x-position
 EndPositionUpdate:
    
     jmp StartFrame           ; loop back to next frame
@@ -258,7 +260,32 @@ SetObjectXPos subroutine
     sta HMP0,Y              ; store the fine offset to the correct HMxx
     sta RESP0,Y             ; fix object position in 15-step increment
     rts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subroutine to generate a Linear-Feedback Shift Resgistar random number
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GetRandomBomberPos subroutine
+    lda Random
+    asl
+    eor Random
+    asl
+    eor Random
+    asl
+    asl
+    eor Random
+    asl
+    rol Random              ; performs a series of shifts and bit operations
 
+    lsr
+    lsr                     ; divide the value by 4 with 2 right shifts
+    sta BomberXPos
+    lda #30
+    adc BomberXPos
+    sta BomberXPos
+
+    lda #96
+    sta BomberYPos
+    rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Declare ROM lookup tables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
