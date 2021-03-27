@@ -322,9 +322,22 @@ UpdateBomberPosition:
     dec BomberYPos           ; else decrement y-position
     jmp EndPositionUpdate    ; jump to EndPositionUpdate to bypass reset
 .ResetBomberPosition
-    inc Score
-    inc Timer
     jsr GetRandomBomberPos   ; call subroutine for random x-position
+.SetScoreValues
+    sed                     ; enable BCD(decimal) mode
+
+    lda Score
+    clc
+    adc #1
+    sta Score               ; add 1 to score (BCD does not like INC instruction)
+
+    lda Timer
+    clc
+    adc #1
+    sta Timer               ; add 1 to timer (BCD does not like INC instruction)
+
+    cld                     ; disable BCD(decimal) mode
+
 EndPositionUpdate:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
