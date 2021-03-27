@@ -16,17 +16,28 @@ JetXPos byte               ; Player X position
 JetYPos byte               ; Player Y Position
 BomberXPos byte            ; Enemy X Position
 BomberYPos byte            ; Enemy Y Position
+Score byte                 ; 2-digit score stored as BCD
+Timer byte                 ; 2-digit score stored as BCD
+Temp byte                  ; auxiliary variable to store temp score values
+OnesDigitOffset word       ; lookup table offset for the 1's digit
+TensDigitOffset word       ; lookup table offset for the 10's digit
 JetSpritePtr word          ; pointer to player0 sprite lookup table
 JetColorPtr word           ; pointer to player0 color lookup table
 BomberSpritePtr word       ; pointer to player1 sprite lookup table
 BomberColorPtr word        ; pointer to player1 color lookup table
 JetAnimOffset byte         ; Player sprite frame offset for animation
 Random byte                ; random number generated to set enemy position
+ScoreSprite byte           ; store the sprite bit pattern for the score
+TimerSprite byte           ; store the sprite bit pattern for the timer
+TerrainColor byte          ; store the color of the terrain
+RiverColor byte            ; store the colore of the river
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JET_HEIGHT = 9             ; player0 sprite height (# rows in lookup table)
 BOMBER_HEIGHT = 9          ; player1 sprite height (# rows in lookup table)
+DIGITS_HEIGHT = 5          ; scoreboard digit hieght (# rows in lookup table)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Code start
@@ -48,9 +59,13 @@ Reset:
     sta BomberYPos
     lda #60
     sta BomberXPos
-
     lda #%11010100
     sta Random
+    
+    lda #0
+    sta Score
+    lda #0
+    sta Timer
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize pointers to the correct lookup table addresses
@@ -80,20 +95,6 @@ Reset:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 StartFrame:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Calculations and task performed in the the pre-VBlank
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    lda JetXPos
-    ldy #0
-    jsr SetObjectXPos      ; set player0 horizontal position
-
-    lda BomberXPos
-    ldy #1
-    jsr SetObjectXPos      ; set bomber horizontal position
-
-    sta WSYNC
-    sta HMOVE              ; apply the horizontal offsets previously set by the routine
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Display VSYNC and VBLANK
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     lda #2
@@ -104,10 +105,22 @@ StartFrame:
     REPEND
     lda #0 
     sta VSYNC               ; turn off VSYNC
-    REPEAT 37
+    REPEAT 33
         sta WSYNC           ; recommended lines of VBLANK
     REPEND
-    sta VBLANK              ; turn of VBLANK
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Calculations and task performed in the the VBlank
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda JetXPos
+    ldy #0
+    jsr SetObjectXPos      ; set player0 horizontal position
+
+    lda BomberXPos
+    ldy #1
+    jsr SetObjectXPos      ; set bomber horizontal position
+
+    jsr CalculateDigitOffset ; calculate the scoreboard digit lookup table offset
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Display the scoreboard
@@ -118,34 +131,90 @@ StartFrame:
     sta PF2
     sta GRP0
     sta GRP1
+    sta CTRLPF
+    sta COLUBK
+
+    lda #$1E
     sta COLUPF
-    REPEAT 20
-        sta WSYNC           ; display 20 scanlines for scoreboard
-    REPEND
+
+    sta WSYNC
+    sta HMOVE              ; apply the horizontal offsets previously set by the routine
+
+    lda #0
+    sta VBLANK              ; turn off VBLANK
+
+    ldx #DIGITS_HEIGHT
+.ScoreDigitLoop:
+    ldy TensDigitOffset     ; get the tens digit offset for the Score
+    lda Digits,Y            ; load the bit pattern from lookup table + Y offset
+    and #$F0                ; mask/remove the graphics for the ones digit from the A register
+    sta ScoreSprite         ; save the score tens digit pattern in a variable
+    
+    ldy OnesDigitOffset
+    lda Digits,Y
+    and #$0F                ; remove the graphics for the tens digit from the A register
+    ora ScoreSprite         ; merge it with the saved tens digit sprite
+    sta ScoreSprite         ; and save it to ScoreSprite
+    sta WSYNC
+    sta PF1                 ; update the playfield to display the Score sprite
+
+    ldy TensDigitOffset+1    ; get the tens digit offset for the Score
+    lda Digits,Y            ; load the bit pattern from lookup table + Y offset
+    and #$F0                ; mask/remove the graphics for the ones digit from the A register
+    sta TimerSprite         ; save the score tens digit pattern in a variable
+    
+    ldy OnesDigitOffset+1
+    lda Digits,Y
+    and #$0F                ; remove the graphics for the tens digit from the A register
+    ora TimerSprite         ; merge it with the saved tens digit sprite
+    sta TimerSprite         ; and save it to ScoreSprite
+
+    jsr Sleep12Cycles       ; waste some cycles
+
+    sta PF1                 ; update the playfield for Timer display
+
+    ldy ScoreSprite         ; preload for the next scanline
+    sta WSYNC
+
+    sty PF1                 ; update playfield for the score display
+    inc TensDigitOffset
+    inc TensDigitOffset+1
+    inc OnesDigitOffset
+    inc OnesDigitOffset+1   ; increment all digits for the next line of data
+
+    jsr Sleep12Cycles
+
+    dex
+    sta PF1                 ; update playfield for timer display
+    bne .ScoreDigitLoop
+
+    sta WSYNC
+    lda #0
+    sta PF0
+    sta PF1
+    sta PF2
+    sta WSYNC
+    sta WSYNC
+    sta WSYNC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 96 visible scanlines for main game (because 2-line kernel)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameVisibleLine:
-    lda #$84
-    sta COLUBK              ; set background color to blue
-    lda #$C2                
-    sta COLUPF              ; set playfield to green
-
+    lda TerrainColor        
+    sta COLUBK              ; set background color to terrain color
+    lda RiverColor         
+    sta COLUPF              ; set playfield to river color
     lda #1
     sta CTRLPF              ; enable playfield reflection
-
     lda #$F0
     sta PF0                 ; setting PF0 bit pattern
-    
     lda #$FC
     sta PF1
-
     lda #0
     sta PF2
 
-    ldx #84                ; X counts the number of remaining scanlines
-
+    ldx #83                ; X counts the number of remaining scanlines
 .GameLineLoop:              ; . has no special meaning, tutor uses it to indicate that this segment is within the above segment
 .AreWeInsideJetSprite:
     txa                     ; transfer X to A
@@ -157,13 +226,13 @@ GameVisibleLine:
 .DrawJetSprite:
     clc                     ; clear carry flag before addition
     adc JetAnimOffset       ; offset animation to jump to correct frame 
-
     tay                     
     lda (JetSpritePtr),Y    ; load player0 bitmap data from lookup table
     sta WSYNC
     sta GRP0                ; set graphics for player0
     lda (JetColorPtr),Y     ; load player0 color data from lookup table
     sta COLUP0              ; set color of player0
+
 .AreWeInsideBomber:
     txa                     ; transfer X to A
     sec                     ; Set carry flag before subtraction
@@ -173,16 +242,13 @@ GameVisibleLine:
     lda #0                  ; else, set lookup index to zero
 .DrawBomberSprite:
     tay                     
-    
     lda #%00000101
     sta NUSIZ1              ; stretch bomber sprite
-
     lda (BomberSpritePtr),Y ; load player0 bitmap data from lookup table
     sta WSYNC
-    sta GRP1                ; set graphics for player0
+    sta GRP1                ; set graphics for player1
     lda (BomberColorPtr),Y  ; load player0 color data from lookup table
-    sta COLUP1              ; set color of player0
-
+    sta COLUP1              ; set color of player1
 
     dex
     bne .GameLineLoop
@@ -190,16 +256,7 @@ GameVisibleLine:
     lda #0
     sta JetAnimOffset       ; always reset animation offset to 0
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Dispaly Overscan
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    lda #2
-    sta VBLANK              ; turn VBLANK on
-    REPEAT 30
-        sta WSYNC           ; recommended lines of VBLANK
-    REPEND
-    lda #0
-    sta VBLANK              ; turn off VBLANK
+    sta WSYNC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Process joystick input for player0
@@ -208,6 +265,10 @@ CheckP0Up:
     lda #%00010000           ; player0 joystick up
     bit SWCHA               
     bne CheckP0Down          ; if bit pattern doesn't match, jump to next check
+.checkUpPFLimit:
+    lda JetYPos
+    cmp #75
+    beq CheckP0Down          ; if JetYPos == 100, jump to next check
     inc JetYPos
     lda #0
     sta JetAnimOffset
@@ -216,6 +277,10 @@ CheckP0Down:
     lda #%00100000           ; player0 joystick up
     bit SWCHA               
     bne CheckP0Left          ; if bit pattern doesn't match, jump to next 
+.checkDownPFLimit:
+    lda JetYPos
+    cmp #0
+    beq CheckP0Left
     dec JetYPos
     lda #0
     sta JetAnimOffset
@@ -224,6 +289,10 @@ CheckP0Left:
     lda #%01000000           ; player0 joystick up
     bit SWCHA               
     bne CheckP0Right         ; if bit pattern doesn't match, jump to next 
+.checkLeftPFLimit:
+    lda JetXPos
+    cmp #35
+    beq CheckP0Right
     dec JetXPos
     lda JET_HEIGHT
     sta JetAnimOffset
@@ -231,7 +300,11 @@ CheckP0Left:
 CheckP0Right:
     lda #%10000000           ; player0 joystick up
     bit SWCHA               
-    bne EndInputCheck        ; if bit pattern doesn't match, jump to 
+    bne EndInputCheck        ; if bit pattern doesn't match, jump to
+.checkRightPFLimit:
+    lda JetXPos
+    cmp #100
+    beq EndInputCheck
     inc JetXPos
     lda JET_HEIGHT
     sta JetAnimOffset
@@ -249,6 +322,8 @@ UpdateBomberPosition:
     dec BomberYPos           ; else decrement y-position
     jmp EndPositionUpdate    ; jump to EndPositionUpdate to bypass reset
 .ResetBomberPosition
+    inc Score
+    inc Timer
     jsr GetRandomBomberPos   ; call subroutine for random x-position
 EndPositionUpdate:
 
@@ -258,21 +333,39 @@ EndPositionUpdate:
 CheckCollisionP0P1:
     lda #%10000000
     bit CXPPMM              ; check CXPPMM bit 7 with the above pattern
-    bne .CollisionP0P1      ; if collided, game obver 
-    jmp CheckCollisionP0PF  ; else, skip to next check
-.CollisionP0P1:
+    bne .P0P1Collided       ; if collided, game over
+    jsr SetBackgroundColor
+    jmp EndCollisionCheck   ; else, skip to next check
+.P0P1Collided:
     jsr GameOver            ; call GameOver subroutine
-CheckCollisionP0PF:
-    lda #%10000000
-    bit CXP0FB              ; if collision 
-    bne .CollisionP0PF
-    jmp EndCollisionCheck
-.CollisionP0PF
-    jsr GameOver            ; call Game
 EndCollisionCheck:
     sta CXCLR               ; clear all collision checks
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Display Overscan
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda #2
+    sta VBLANK              ; turn VBLANK on
+    REPEAT 30
+        sta WSYNC           ; recommended lines of VBLANK
+    REPEND
+    lda #0
+    sta VBLANK              ; turn off VBLANK
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Loop back to start a brand new frame
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     jmp StartFrame          ; loop back to next frame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Set playfield and terrain color
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SetBackgroundColor subroutine
+    lda #$C2                ; green
+    sta TerrainColor
+    lda #$84                ; blue
+    sta RiverColor
+    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subroutine to handle object horizontal position
@@ -300,9 +393,10 @@ SetObjectXPos subroutine
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameOver subroutine
     lda #$30
-    sta COLUBK
-    ;lda #0
-    ;sta Score
+    sta TerrainColor        ; set terrain color to red
+    sta RiverColor          ; set river color to red
+    lda #0
+    sta Score               ; Score = 0
     rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -319,7 +413,6 @@ GetRandomBomberPos subroutine
     eor Random
     asl
     rol Random              ; performs a series of shifts and bit operations
-
     lsr
     lsr                     ; divide the value by 4 with 2 right shifts
     sta BomberXPos
@@ -330,9 +423,157 @@ GetRandomBomberPos subroutine
     lda #96
     sta BomberYPos
     rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subroutine to handle scoreboard digits to be displayed on the screen
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Convert the high and low nibbles of the variable Score and Timer
+;; into the offsets of digits lookup table so the values can be displayed.
+;; Each digit has a height of 5 bytes in the lookup table.
+;;
+;; For the low nibble we need to multiple by 5
+;;  - we can use left shitsf to perform multiplcation by 2
+;;  - for any number N, the value of N*5 = (N*2*2)+N
+;;
+;; For the upper nibble, since it's already times 16, we need to divide it
+;; and then multiply by 5.
+;;  - we can use right shifts to perform division by 2
+;;  - for any number N, the value of (N/16)*5 = (N/2/2)+(N/2/2/2/2)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CalculateDigitOffset subroutine
+    ldx #1                  ; X register is the loop counter
+.PrepareScoreLoop           ; this will loop twice, first X=1, and then X=0
+    lda Score,X             ; load A with Timer (X=1) or Score (X=0)
+    and #$0F
+    sta Temp                ; save the value of A into Temp
+    asl
+    asl
+    adc Temp
+    sta OnesDigitOffset,X   ; save A in OnesDigitOffset+1 or OnesDigitOffset+0
+    
+    lda Score,X             ; load A with Timer (X=1) or Score (X=0)
+    and #$F0                ; remove the ones digit by masking 4 bits
+    lsr                     ; N/2
+    lsr                     ; N/4
+    sta Temp                ; Store into temp N/4
+    lsr                     ; N/8
+    lsr                     ; N/16
+    adc Temp                ; add N/16 with value in Temp(N/4)
+    sta TensDigitOffset,X   ; save A in TensDigitOffset+1 or TensDigitOffset+0 
+
+    dex
+    bpl .PrepareScoreLoop   ; while X >= 0 loop again
+    rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subroutine to to waste 12 cycles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; jsr takes 6 cycles
+;; rts takes 6 cycles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Sleep12Cycles subroutine
+    rts
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Declare ROM lookup tables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Digits:
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %00110011          ;  ##  ##
+    .byte %00010001          ;   #   #
+    .byte %01110111          ; ### ###
+
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+    .byte %00010001          ;   #   #
+
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+    .byte %00010001          ;   #   #
+    .byte %01110111          ; ### ###
+
+    .byte %00100010          ;  #   #
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+
+    .byte %01110111          ; ### ###
+    .byte %01010101          ; # # # #
+    .byte %01100110          ; ##  ##
+    .byte %01010101          ; # # # #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01000100          ; #   #
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+
+    .byte %01100110          ; ##  ##
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+    .byte %01010101          ; # # # #
+    .byte %01100110          ; ##  ##
+
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01110111          ; ### ###
+
+    .byte %01110111          ; ### ###
+    .byte %01000100          ; #   #
+    .byte %01100110          ; ##  ##
+    .byte %01000100          ; #   #
+    .byte %01000100          ; #   #
+
 JetSprite:
     .byte #%00000000         ;
     .byte #%00010100         ;   # #
