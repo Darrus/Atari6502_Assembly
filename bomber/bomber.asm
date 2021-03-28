@@ -121,7 +121,7 @@ StartFrame:
     REPEND
     lda #0 
     sta VSYNC               ; turn off VSYNC
-    REPEAT 33
+    REPEAT 32
         sta WSYNC           ; recommended lines of VBLANK
     REPEND
 
@@ -142,11 +142,13 @@ StartFrame:
 
     jsr CalculateDigitOffset ; calculate the scoreboard digit lookup table offset
 
+    jsr GenerateJetSound   ; configure and enable our jet engine audio
+
     sta WSYNC
     sta HMOVE              ; apply the horizontal offsets previously set by the routine
 
     lda #0
-    sta VBLANK              ; turn off VBLANK
+    sta VBLANK             ; turn off VBLANK
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Display the scoreboard
@@ -359,6 +361,7 @@ CheckButtonPressed:
     clc
     adc #5                  ; set missile in the middle of the jet
     sta MissileXPos
+    jsr GenerateMissileSound
 EndInputCheck:              ; fallback when no input was performed
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -410,12 +413,49 @@ CheckCollisionM0P1:
     sta MissileYPos
 
 EndCollisionCheck:
-    sta CXCLR               ; clear all collision checks
+    sta CXCLR               ; clear all collision checks\
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loop back to start a brand new frame
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     jmp StartFrame          ; loop back to next frame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generate audio for the jet engine sound based on the jet Y-position
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GenerateJetSound subroutine
+    lda #1
+    sta AUDV0               ; volume
+
+    lda JetYPos
+    lsr
+    lsr
+    lsr                     ; divide position by 8
+    sta Temp
+    lda #31
+    sec
+    sbc Temp
+    sta AUDF0               ; frequency
+    
+    lda #8
+    sta AUDC0               ; control (tone)
+
+    rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generate audio for missile (incomplete)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GenerateMissileSound subroutine
+    lda #2
+    sta AUDV1               ; volume
+
+    lda #15
+    sta AUDF1               ; frequency
+    
+    lda #31
+    sta AUDC1               ; control (tone)
+
+    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set playfield and terrain color
