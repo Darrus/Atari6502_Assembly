@@ -390,43 +390,45 @@
       9  0000 ????						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      10  0000 ????						;; Variables declaration
      11  0000 ????						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     12 U0099 ????				      seg.u	Variables
+     12 U009b ????				      seg.u	Variables
      13 U0080					      org	$80
      14 U0080
      15 U0080		       00	   JetXPos    byte.b		; Player X position
      16 U0081		       00	   JetYPos    byte.b		; Player Y Position
      17 U0082		       00	   BomberXPos byte.b		; Enemy X Position
      18 U0083		       00	   BomberYPos byte.b		; Enemy Y Position
-     19 U0084		       00	   Score      byte.b		; 2-digit score stored as BCD
-     20 U0085		       00	   Timer      byte.b		; 2-digit score stored as BCD
-     21 U0086		       00	   Temp       byte.b		; auxiliary variable to store temp score values
-     22 U0087		       00 00	   OnesDigitOffset word.w		; lookup table offset for the 1's digit
-     23 U0089		       00 00	   TensDigitOffset word.w		; lookup table offset for the 10's digit
-     24 U008b		       00 00	   JetSpritePtr word.w		; pointer to player0 sprite lookup table
-     25 U008d		       00 00	   JetColorPtr word.w		; pointer to player0 color lookup table
-     26 U008f		       00 00	   BomberSpritePtr word.w		; pointer to player1 sprite lookup table
-     27 U0091		       00 00	   BomberColorPtr word.w		; pointer to player1 color lookup table
-     28 U0093		       00	   JetAnimOffset byte.b		; Player sprite frame offset for animation
-     29 U0094		       00	   Random     byte.b		; random number generated to set enemy position
-     30 U0095		       00	   ScoreSprite byte.b		; store the sprite bit pattern for the score
-     31 U0096		       00	   TimerSprite byte.b		; store the sprite bit pattern for the timer
-     32 U0097		       00	   TerrainColor byte.b		; store the color of the terrain
-     33 U0098		       00	   RiverColor byte.b		; store the colore of the river
-     34 U0099
-     35 U0099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     36 U0099							;; Define constants
-     37 U0099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     38 U0099		       00 09	   JET_HEIGHT =	9	; player0 sprite height (# rows in lookup table)
-     39 U0099		       00 09	   BOMBER_HEIGHT =	9	; player1 sprite height (# rows in lookup table)
-     40 U0099		       00 05	   DIGITS_HEIGHT =	5	; scoreboard digit hieght (# rows in lookup table)
-     41 U0099
-     42 U0099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     43 U0099							;; Code start
-     44 U0099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     45  10000 ????				       seg	Code
-     46  f000					      org	$F000
-     47  f000
-     48  f000				   Reset
+     19 U0084		       00	   MissileXPos byte.b		; Missile X Position
+     20 U0085		       00	   MissileYPos byte.b		; Missile Y Position
+     21 U0086		       00	   Score      byte.b		; 2-digit score stored as BCD
+     22 U0087		       00	   Timer      byte.b		; 2-digit score stored as BCD
+     23 U0088		       00	   Temp       byte.b		; auxiliary variable to store temp score values
+     24 U0089		       00 00	   OnesDigitOffset word.w		; lookup table offset for the 1's digit
+     25 U008b		       00 00	   TensDigitOffset word.w		; lookup table offset for the 10's digit
+     26 U008d		       00 00	   JetSpritePtr word.w		; pointer to player0 sprite lookup table
+     27 U008f		       00 00	   JetColorPtr word.w		; pointer to player0 color lookup table
+     28 U0091		       00 00	   BomberSpritePtr word.w		; pointer to player1 sprite lookup table
+     29 U0093		       00 00	   BomberColorPtr word.w		; pointer to player1 color lookup table
+     30 U0095		       00	   JetAnimOffset byte.b		; Player sprite frame offset for animation
+     31 U0096		       00	   Random     byte.b		; random number generated to set enemy position
+     32 U0097		       00	   ScoreSprite byte.b		; store the sprite bit pattern for the score
+     33 U0098		       00	   TimerSprite byte.b		; store the sprite bit pattern for the timer
+     34 U0099		       00	   TerrainColor byte.b		; store the color of the terrain
+     35 U009a		       00	   RiverColor byte.b		; store the colore of the river
+     36 U009b
+     37 U009b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     38 U009b							;; Define constants
+     39 U009b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     40 U009b		       00 09	   JET_HEIGHT =	9	; player0 sprite height (# rows in lookup table)
+     41 U009b		       00 09	   BOMBER_HEIGHT =	9	; player1 sprite height (# rows in lookup table)
+     42 U009b		       00 05	   DIGITS_HEIGHT =	5	; scoreboard digit hieght (# rows in lookup table)
+     43 U009b
+     44 U009b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     45 U009b							;; Code start
+     46 U009b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     47  10000 ????				       seg	Code
+     48  f000					      org	$F000
+     49  f000
+     50  f000				   Reset
       0  f000					      CLEAN_START		; Call macro to reset memory and registers
       1  f000		       78		      sei
       2  f001		       d8		      cld
@@ -439,741 +441,794 @@
       9  f008		       48		      pha
      10  f009		       d0 fb		      bne	.CLEAR_STACK
      11  f00b
-     50  f00b
-     51  f00b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     52  f00b							;; Initialize RAM variables and TIA registers
+     52  f00b
      53  f00b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     54  f00b		       a9 0a		      lda	#10
-     55  f00d		       85 81		      sta	JetYPos
-     56  f00f		       a9 5a		      lda	#90
-     57  f011		       85 80		      sta	JetXPos
-     58  f013		       a9 50		      lda	#80
-     59  f015		       85 83		      sta	BomberYPos
-     60  f017		       a9 3c		      lda	#60
-     61  f019		       85 82		      sta	BomberXPos
-     62  f01b		       a9 d4		      lda	#%11010100
-     63  f01d		       85 94		      sta	Random
-     64  f01f
-     65  f01f		       a9 00		      lda	#0
-     66  f021		       85 84		      sta	Score
-     67  f023		       a9 00		      lda	#0
-     68  f025		       85 85		      sta	Timer
-     69  f027
-     70  f027							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     71  f027							;; Initialize pointers to the correct lookup table addresses
+     54  f00b							;; Initialize RAM variables and TIA registers
+     55  f00b							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     56  f00b		       a9 0a		      lda	#10
+     57  f00d		       85 81		      sta	JetYPos
+     58  f00f		       a9 5a		      lda	#90
+     59  f011		       85 80		      sta	JetXPos
+     60  f013		       a9 50		      lda	#80
+     61  f015		       85 83		      sta	BomberYPos
+     62  f017		       a9 3c		      lda	#60
+     63  f019		       85 82		      sta	BomberXPos
+     64  f01b		       a9 d4		      lda	#%11010100
+     65  f01d		       85 96		      sta	Random
+     66  f01f
+     67  f01f		       a9 00		      lda	#0
+     68  f021		       85 86		      sta	Score
+     69  f023		       a9 00		      lda	#0
+     70  f025		       85 87		      sta	Timer
+     71  f027
      72  f027							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     73  f027		       a9 ed		      lda	#<JetSprite
-     74  f029		       85 8b		      sta	JetSpritePtr	; lo-byte pointer for jet sprite lookup table
-     75  f02b		       a9 f2		      lda	#>JetSprite
-     76  f02d		       85 8c		      sta	JetSpritePtr+1	; hi-byte pointer for jet sprite lookup table
-     77  f02f
-     78  f02f		       a9 08		      lda	#<JetColor
-     79  f031		       85 8d		      sta	JetColorPtr	; lo-byte pointer for jet color lookup table
-     80  f033		       a9 f3		      lda	#>JetColor
-     81  f035		       85 8e		      sta	JetColorPtr+1	; hi-byte pointer for jet color lookup table
-     82  f037
-     83  f037		       a9 ff		      lda	#<BomberSprite
-     84  f039		       85 8f		      sta	BomberSpritePtr	; lo-byte pointer for enemy sprite lookup table
-     85  f03b		       a9 f2		      lda	#>BomberSprite
-     86  f03d		       85 90		      sta	BomberSpritePtr+1	; hi-byte pointer for enemy sprite lookup table
-     87  f03f
-     88  f03f		       a9 1a		      lda	#<BomberColor
-     89  f041		       85 91		      sta	BomberColorPtr	; lo-byte pointer for enemy color lookup table
-     90  f043		       a9 f3		      lda	#>BomberColor
-     91  f045		       85 92		      sta	BomberColorPtr+1	; hi-byte pointer for enemy color lookup table
-     92  f047
-     93  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     94  f047							;; Start the main display loop and frame rendering
-     95  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     96  f047				   StartFrame
-     97  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     98  f047							;; Display VSYNC and VBLANK
-     99  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    100  f047		       a9 02		      lda	#2
-    101  f049		       85 01		      sta	VBLANK	; turn on VBLANK
-    102  f04b		       85 00		      sta	VSYNC	; turn on VSYNC
-    103  f04d					      REPEAT	3
-    104  f04d		       85 02		      sta	WSYNC	; recommended lines of VSYNC
-    103  f04d					      REPEND
-    104  f04f		       85 02		      sta	WSYNC	; recommended lines of VSYNC
-    103  f04f					      REPEND
-    104  f051		       85 02		      sta	WSYNC	; recommended lines of VSYNC
-    105  f053					      REPEND
-    106  f053		       a9 00		      lda	#0
-    107  f055		       85 00		      sta	VSYNC	; turn off VSYNC
-    108  f057					      REPEAT	33
-    109  f057		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f057					      REPEND
-    109  f059		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f059					      REPEND
-    109  f05b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f05b					      REPEND
-    109  f05d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f05d					      REPEND
-    109  f05f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f05f					      REPEND
-    109  f061		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f061					      REPEND
-    109  f063		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f063					      REPEND
-    109  f065		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f065					      REPEND
-    109  f067		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f067					      REPEND
-    109  f069		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f069					      REPEND
-    109  f06b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f06b					      REPEND
-    109  f06d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f06d					      REPEND
-    109  f06f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f06f					      REPEND
-    109  f071		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f071					      REPEND
-    109  f073		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f073					      REPEND
-    109  f075		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f075					      REPEND
-    109  f077		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f077					      REPEND
-    109  f079		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f079					      REPEND
-    109  f07b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f07b					      REPEND
-    109  f07d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f07d					      REPEND
-    109  f07f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f07f					      REPEND
-    109  f081		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f081					      REPEND
-    109  f083		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f083					      REPEND
-    109  f085		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f085					      REPEND
-    109  f087		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f087					      REPEND
-    109  f089		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f089					      REPEND
-    109  f08b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f08b					      REPEND
-    109  f08d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f08d					      REPEND
-    109  f08f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f08f					      REPEND
-    109  f091		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f091					      REPEND
-    109  f093		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f093					      REPEND
-    109  f095		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    108  f095					      REPEND
-    109  f097		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    110  f099					      REPEND
-    111  f099
-    112  f099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    113  f099							;; Calculations and task performed in the the VBlank
-    114  f099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    115  f099		       a5 80		      lda	JetXPos
-    116  f09b		       a0 00		      ldy	#0
-    117  f09d		       20 3f f2 	      jsr	SetObjectXPos	; set player0 horizontal position
-    118  f0a0
-    119  f0a0		       a5 82		      lda	BomberXPos
-    120  f0a2		       a0 01		      ldy	#1
-    121  f0a4		       20 3f f2 	      jsr	SetObjectXPos	; set bomber horizontal position
-    122  f0a7
-    123  f0a7		       20 7c f2 	      jsr	CalculateDigitOffset	; calculate the scoreboard digit lookup table offset
-    124  f0aa
-    125  f0aa							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    126  f0aa							;; Display the scoreboard
-    127  f0aa							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    128  f0aa		       a9 00		      lda	#0	; clear TIA registers before each new frame
-    129  f0ac		       85 0d		      sta	PF0
-    130  f0ae		       85 0e		      sta	PF1
-    131  f0b0		       85 0f		      sta	PF2
-    132  f0b2		       85 1b		      sta	GRP0
-    133  f0b4		       85 1c		      sta	GRP1
-    134  f0b6		       85 0a		      sta	CTRLPF
-    135  f0b8		       85 09		      sta	COLUBK
-    136  f0ba
-    137  f0ba		       a9 1e		      lda	#$1E
-    138  f0bc		       85 08		      sta	COLUPF
-    139  f0be
-    140  f0be		       85 02		      sta	WSYNC
-    141  f0c0		       85 2a		      sta	HMOVE	; apply the horizontal offsets previously set by the routine
-    142  f0c2
-    143  f0c2		       a9 00		      lda	#0
-    144  f0c4		       85 01		      sta	VBLANK	; turn off VBLANK
-    145  f0c6
-    146  f0c6		       a2 05		      ldx	#DIGITS_HEIGHT
-    147  f0c8				   .ScoreDigitLoop
-    148  f0c8		       a4 89		      ldy	TensDigitOffset	; get the tens digit offset for the Score
-    149  f0ca		       b9 9d f2 	      lda	Digits,Y	; load the bit pattern from lookup table + Y offset
-    150  f0cd		       29 f0		      and	#$F0	; mask/remove the graphics for the ones digit from the A register
-    151  f0cf		       85 95		      sta	ScoreSprite	; save the score tens digit pattern in a variable
-    152  f0d1
-    153  f0d1		       a4 87		      ldy	OnesDigitOffset
-    154  f0d3		       b9 9d f2 	      lda	Digits,Y
-    155  f0d6		       29 0f		      and	#$0F	; remove the graphics for the tens digit from the A register
-    156  f0d8		       05 95		      ora	ScoreSprite	; merge it with the saved tens digit sprite
-    157  f0da		       85 95		      sta	ScoreSprite	; and save it to ScoreSprite
-    158  f0dc		       85 02		      sta	WSYNC
-    159  f0de		       85 0e		      sta	PF1	; update the playfield to display the Score sprite
-    160  f0e0
-    161  f0e0		       a4 8a		      ldy	TensDigitOffset+1	; get the tens digit offset for the Score
-    162  f0e2		       b9 9d f2 	      lda	Digits,Y	; load the bit pattern from lookup table + Y offset
-    163  f0e5		       29 f0		      and	#$F0	; mask/remove the graphics for the ones digit from the A register
-    164  f0e7		       85 96		      sta	TimerSprite	; save the score tens digit pattern in a variable
-    165  f0e9
-    166  f0e9		       a4 88		      ldy	OnesDigitOffset+1
-    167  f0eb		       b9 9d f2 	      lda	Digits,Y
-    168  f0ee		       29 0f		      and	#$0F	; remove the graphics for the tens digit from the A register
-    169  f0f0		       05 96		      ora	TimerSprite	; merge it with the saved tens digit sprite
-    170  f0f2		       85 96		      sta	TimerSprite	; and save it to ScoreSprite
-    171  f0f4
-    172  f0f4		       20 9c f2 	      jsr	Sleep12Cycles	; waste some cycles
-    173  f0f7
-    174  f0f7		       85 0e		      sta	PF1	; update the playfield for Timer display
-    175  f0f9
-    176  f0f9		       a4 95		      ldy	ScoreSprite	; preload for the next scanline
-    177  f0fb		       85 02		      sta	WSYNC
-    178  f0fd
-    179  f0fd		       84 0e		      sty	PF1	; update playfield for the score display
-    180  f0ff		       e6 89		      inc	TensDigitOffset
-    181  f101		       e6 8a		      inc	TensDigitOffset+1
-    182  f103		       e6 87		      inc	OnesDigitOffset
-    183  f105		       e6 88		      inc	OnesDigitOffset+1	; increment all digits for the next line of data
-    184  f107
-    185  f107		       20 9c f2 	      jsr	Sleep12Cycles
-    186  f10a
-    187  f10a		       ca		      dex
-    188  f10b		       85 0e		      sta	PF1	; update playfield for timer display
-    189  f10d		       d0 b9		      bne	.ScoreDigitLoop
-    190  f10f
-    191  f10f		       85 02		      sta	WSYNC
-    192  f111		       a9 00		      lda	#0
-    193  f113		       85 0d		      sta	PF0
-    194  f115		       85 0e		      sta	PF1
-    195  f117		       85 0f		      sta	PF2
-    196  f119		       85 02		      sta	WSYNC
-    197  f11b		       85 02		      sta	WSYNC
-    198  f11d		       85 02		      sta	WSYNC
-    199  f11f
-    200  f11f							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    201  f11f							;; 96 visible scanlines for main game (because 2-line kernel)
-    202  f11f							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    203  f11f				   GameVisibleLine
-    204  f11f		       a5 97		      lda	TerrainColor
-    205  f121		       85 09		      sta	COLUBK	; set background color to terrain color
-    206  f123		       a5 98		      lda	RiverColor
-    207  f125		       85 08		      sta	COLUPF	; set playfield to river color
-    208  f127		       a9 01		      lda	#1
-    209  f129		       85 0a		      sta	CTRLPF	; enable playfield reflection
-    210  f12b		       a9 f0		      lda	#$F0
-    211  f12d		       85 0d		      sta	PF0	; setting PF0 bit pattern
-    212  f12f		       a9 fc		      lda	#$FC
-    213  f131		       85 0e		      sta	PF1
-    214  f133		       a9 00		      lda	#0
-    215  f135		       85 0f		      sta	PF2
-    216  f137
-    217  f137		       a2 53		      ldx	#83	; X counts the number of remaining scanlines
-    218  f139				   .GameLineLoop		; . has no special meaning, tutor uses it to indicate that this segment is within the above segment
-    219  f139				   .AreWeInsideJetSprite
-    220  f139		       8a		      txa		; transfer X to A
-    221  f13a		       38		      sec		; Set carry flag before subtraction
-    222  f13b		       e5 81		      sbc	JetYPos	; subtract sprite Y-coordinate
-    223  f13d		       c5 09		      cmp	JET_HEIGHT	; are we inside the sprite height
-    224  f13f		       90 02		      bcc	.DrawJetSprite	; if result < SpriteHeight, call the draw routine
-    225  f141		       a9 00		      lda	#0	; else, set lookup index to zero
-    226  f143				   .DrawJetSprite
-    227  f143		       18		      clc		; clear carry flag before addition
-    228  f144		       65 93		      adc	JetAnimOffset	; offset animation to jump to correct frame 
-    229  f146		       a8		      tay
-    230  f147		       b1 8b		      lda	(JetSpritePtr),Y	; load player0 bitmap data from lookup table
-    231  f149		       85 02		      sta	WSYNC
-    232  f14b		       85 1b		      sta	GRP0	; set graphics for player0
-    233  f14d		       b1 8d		      lda	(JetColorPtr),Y	; load player0 color data from lookup table
-    234  f14f		       85 06		      sta	COLUP0	; set color of player0
-    235  f151
-    236  f151				   .AreWeInsideBomber
-    237  f151		       8a		      txa		; transfer X to A
-    238  f152		       38		      sec		; Set carry flag before subtraction
-    239  f153		       e5 83		      sbc	BomberYPos	; subtract sprite Y-coordinate
-    240  f155		       c5 09		      cmp	BOMBER_HEIGHT	; are we inside the sprite height
-    241  f157		       90 02		      bcc	.DrawBomberSprite	; if result < SpriteHeight, call the draw routine
-    242  f159		       a9 00		      lda	#0	; else, set lookup index to zero
-    243  f15b				   .DrawBomberSprite
-    244  f15b		       a8		      tay
-    245  f15c		       a9 05		      lda	#%00000101
-    246  f15e		       85 05		      sta	NUSIZ1	; stretch bomber sprite
-    247  f160		       b1 8f		      lda	(BomberSpritePtr),Y	; load player0 bitmap data from lookup table
-    248  f162		       85 02		      sta	WSYNC
-    249  f164		       85 1c		      sta	GRP1	; set graphics for player1
-    250  f166		       b1 91		      lda	(BomberColorPtr),Y	; load player0 color data from lookup table
-    251  f168		       85 07		      sta	COLUP1	; set color of player1
-    252  f16a
-    253  f16a		       ca		      dex
-    254  f16b		       d0 cc		      bne	.GameLineLoop
-    255  f16d
-    256  f16d		       a9 00		      lda	#0
-    257  f16f		       85 93		      sta	JetAnimOffset	; always reset animation offset to 0
-    258  f171
-    259  f171		       85 02		      sta	WSYNC
-    260  f173
-    261  f173							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    262  f173							;; Process joystick input for player0
-    263  f173							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    264  f173				   CheckP0Up
-    265  f173		       a9 10		      lda	#%00010000	; player0 joystick up
-    266  f175		       2c 80 02 	      bit	SWCHA
-    267  f178		       d0 0c		      bne	CheckP0Down	; if bit pattern doesn't match, jump to next check
-    268  f17a				   .checkUpPFLimit
-    269  f17a		       a5 81		      lda	JetYPos
-    270  f17c		       c9 4b		      cmp	#75
-    271  f17e		       f0 06		      beq	CheckP0Down	; if JetYPos == 100, jump to next check
-    272  f180		       e6 81		      inc	JetYPos
-    273  f182		       a9 00		      lda	#0
-    274  f184		       85 93		      sta	JetAnimOffset
-    275  f186
-    276  f186				   CheckP0Down
-    277  f186		       a9 20		      lda	#%00100000	; player0 joystick up
-    278  f188		       2c 80 02 	      bit	SWCHA
-    279  f18b		       d0 0c		      bne	CheckP0Left	; if bit pattern doesn't match, jump to next 
-    280  f18d				   .checkDownPFLimit
-    281  f18d		       a5 81		      lda	JetYPos
-    282  f18f		       c9 00		      cmp	#0
-    283  f191		       f0 06		      beq	CheckP0Left
-    284  f193		       c6 81		      dec	JetYPos
-    285  f195		       a9 00		      lda	#0
-    286  f197		       85 93		      sta	JetAnimOffset
-    287  f199
-    288  f199				   CheckP0Left
-    289  f199		       a9 40		      lda	#%01000000	; player0 joystick up
-    290  f19b		       2c 80 02 	      bit	SWCHA
-    291  f19e		       d0 0c		      bne	CheckP0Right	; if bit pattern doesn't match, jump to next 
-    292  f1a0				   .checkLeftPFLimit
-    293  f1a0		       a5 80		      lda	JetXPos
-    294  f1a2		       c9 23		      cmp	#35
-    295  f1a4		       f0 06		      beq	CheckP0Right
-    296  f1a6		       c6 80		      dec	JetXPos
-    297  f1a8		       a5 09		      lda	JET_HEIGHT
-    298  f1aa		       85 93		      sta	JetAnimOffset
-    299  f1ac
-    300  f1ac				   CheckP0Right
-    301  f1ac		       a9 80		      lda	#%10000000	; player0 joystick up
-    302  f1ae		       2c 80 02 	      bit	SWCHA
-    303  f1b1		       d0 0c		      bne	EndInputCheck	; if bit pattern doesn't match, jump to
-    304  f1b3				   .checkRightPFLimit
-    305  f1b3		       a5 80		      lda	JetXPos
-    306  f1b5		       c9 64		      cmp	#100
-    307  f1b7		       f0 06		      beq	EndInputCheck
-    308  f1b9		       e6 80		      inc	JetXPos
-    309  f1bb		       a5 09		      lda	JET_HEIGHT
-    310  f1bd		       85 93		      sta	JetAnimOffset
-    311  f1bf
-    312  f1bf				   EndInputCheck		; fallback when no input was performed
-    313  f1bf
-    314  f1bf							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    315  f1bf							;; Calculations to update position for next frame
-    316  f1bf							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    317  f1bf				   UpdateBomberPosition
-    318  f1bf		       a5 83		      lda	BomberYPos
-    319  f1c1		       18		      clc
-    320  f1c2		       c9 00		      cmp	#0
-    321  f1c4		       30 05		      bmi	.ResetBomberPosition	; if < 0, reset y-position
-    322  f1c6		       c6 83		      dec	BomberYPos	; else decrement y-position
-    323  f1c8		       4c de f1 	      jmp	EndPositionUpdate	; jump to EndPositionUpdate to bypass reset
-    324  f1cb				   .ResetBomberPosition
-    325  f1cb		       20 5e f2 	      jsr	GetRandomBomberPos	; call subroutine for random x-position
-    326  f1ce				   .SetScoreValues
-    327  f1ce		       f8		      sed		; enable BCD(decimal) mode
-    328  f1cf
-    329  f1cf		       a5 84		      lda	Score
-    330  f1d1		       18		      clc
-    331  f1d2		       69 01		      adc	#1
-    332  f1d4		       85 84		      sta	Score	; add 1 to score (BCD does not like INC instruction)
-    333  f1d6
-    334  f1d6		       a5 85		      lda	Timer
-    335  f1d8		       18		      clc
-    336  f1d9		       69 01		      adc	#1
-    337  f1db		       85 85		      sta	Timer	; add 1 to timer (BCD does not like INC instruction)
-    338  f1dd
-    339  f1dd		       d8		      cld		; disable BCD(decimal) mode
-    340  f1de
-    341  f1de				   EndPositionUpdate
-    342  f1de
-    343  f1de							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    344  f1de							;; Check for object collision
-    345  f1de							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    346  f1de				   CheckCollisionP0P1
-    347  f1de		       a9 80		      lda	#%10000000
-    348  f1e0		       24 07		      bit	CXPPMM	; check CXPPMM bit 7 with the above pattern
-    349  f1e2		       d0 06		      bne	.P0P1Collided	; if collided, game over
-    350  f1e4		       20 36 f2 	      jsr	SetBackgroundColor
-    351  f1e7		       4c ed f1 	      jmp	EndCollisionCheck	; else, skip to next check
-    352  f1ea				   .P0P1Collided
-    353  f1ea		       20 53 f2 	      jsr	GameOver	; call GameOver subroutine
-    354  f1ed				   EndCollisionCheck
-    355  f1ed		       85 2c		      sta	CXCLR	; clear all collision checks
-    356  f1ef
-    357  f1ef							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    358  f1ef							;; Display Overscan
-    359  f1ef							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    360  f1ef		       a9 02		      lda	#2
-    361  f1f1		       85 01		      sta	VBLANK	; turn VBLANK on
-    362  f1f3					      REPEAT	30
-    363  f1f3		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1f3					      REPEND
-    363  f1f5		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1f5					      REPEND
-    363  f1f7		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1f7					      REPEND
-    363  f1f9		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1f9					      REPEND
-    363  f1fb		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1fb					      REPEND
-    363  f1fd		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1fd					      REPEND
-    363  f1ff		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f1ff					      REPEND
-    363  f201		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f201					      REPEND
-    363  f203		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f203					      REPEND
-    363  f205		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f205					      REPEND
-    363  f207		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f207					      REPEND
-    363  f209		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f209					      REPEND
-    363  f20b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f20b					      REPEND
-    363  f20d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f20d					      REPEND
-    363  f20f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f20f					      REPEND
-    363  f211		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f211					      REPEND
-    363  f213		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f213					      REPEND
-    363  f215		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f215					      REPEND
-    363  f217		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f217					      REPEND
-    363  f219		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f219					      REPEND
-    363  f21b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f21b					      REPEND
-    363  f21d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f21d					      REPEND
-    363  f21f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f21f					      REPEND
-    363  f221		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f221					      REPEND
-    363  f223		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f223					      REPEND
-    363  f225		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f225					      REPEND
-    363  f227		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f227					      REPEND
-    363  f229		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f229					      REPEND
-    363  f22b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    362  f22b					      REPEND
-    363  f22d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
-    364  f22f					      REPEND
-    365  f22f		       a9 00		      lda	#0
-    366  f231		       85 01		      sta	VBLANK	; turn off VBLANK
-    367  f233
-    368  f233							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    369  f233							;; Loop back to start a brand new frame
-    370  f233							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    371  f233		       4c 47 f0 	      jmp	StartFrame	; loop back to next frame
-    372  f236
-    373  f236							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    374  f236							;; Set playfield and terrain color
-    375  f236							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    376  f236				   SetBackgroundColor subroutine
-    377  f236		       a9 c2		      lda	#$C2	; green
-    378  f238		       85 97		      sta	TerrainColor
-    379  f23a		       a9 84		      lda	#$84	; blue
-    380  f23c		       85 98		      sta	RiverColor
-    381  f23e		       60		      rts
-    382  f23f
-    383  f23f							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    384  f23f							;; Subroutine to handle object horizontal position
-    385  f23f							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    386  f23f							;; A is the target x-coord position in pixels of our object
-    387  f23f							;; Y is the object type (0:player, 1:bomber, 2:missle0, 3:missile1, 4:ball)
-    388  f23f							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    389  f23f				   SetObjectXPos subroutine
-    390  f23f		       85 02		      sta	WSYNC
-    391  f241		       38		      sec
-    392  f242				   .Div15Loop
-    393  f242		       e9 0f		      sbc	#15
-    394  f244		       b0 fc		      bcs	.Div15Loop	; loop until carry-flag is clear
-    395  f246		       49 07		      eor	#7
-    396  f248		       0a		      asl
-    397  f249		       0a		      asl
-    398  f24a		       0a		      asl
-    399  f24b		       0a		      asl		; four shift lefts to get only the top 4 bits
-    400  f24c		       99 20 00 	      sta	HMP0,Y	; store the fine offset to the correct HMxx
-    401  f24f		       99 10 00 	      sta	RESP0,Y	; fix object position in 15-step increment
-    402  f252		       60		      rts
-    403  f253
-    404  f253							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    405  f253							;; Game Over subroutine
-    406  f253							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    407  f253				   GameOver   subroutine
-    408  f253		       a9 30		      lda	#$30
-    409  f255		       85 97		      sta	TerrainColor	; set terrain color to red
-    410  f257		       85 98		      sta	RiverColor	; set river color to red
-    411  f259		       a9 00		      lda	#0
-    412  f25b		       85 84		      sta	Score	; Score = 0
-    413  f25d		       60		      rts
-    414  f25e
-    415  f25e							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    416  f25e							;; Subroutine to generate a Linear-Feedback Shift Resgistar random number
-    417  f25e							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    418  f25e				   GetRandomBomberPos subroutine
-    419  f25e		       a5 94		      lda	Random
-    420  f260		       0a		      asl
-    421  f261		       45 94		      eor	Random
-    422  f263		       0a		      asl
-    423  f264		       45 94		      eor	Random
-    424  f266		       0a		      asl
-    425  f267		       0a		      asl
-    426  f268		       45 94		      eor	Random
-    427  f26a		       0a		      asl
-    428  f26b		       26 94		      rol	Random	; performs a series of shifts and bit operations
-    429  f26d		       4a		      lsr
-    430  f26e		       4a		      lsr		; divide the value by 4 with 2 right shifts
-    431  f26f		       85 82		      sta	BomberXPos
-    432  f271		       a9 1e		      lda	#30
-    433  f273		       65 82		      adc	BomberXPos
-    434  f275		       85 82		      sta	BomberXPos
-    435  f277
-    436  f277		       a9 60		      lda	#96
-    437  f279		       85 83		      sta	BomberYPos
-    438  f27b		       60		      rts
-    439  f27c
-    440  f27c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    441  f27c							;; Subroutine to handle scoreboard digits to be displayed on the screen
-    442  f27c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    443  f27c							;; Convert the high and low nibbles of the variable Score and Timer
-    444  f27c							;; into the offsets of digits lookup table so the values can be displayed.
-    445  f27c							;; Each digit has a height of 5 bytes in the lookup table.
-    446  f27c							;;
-    447  f27c							;; For the low nibble we need to multiple by 5
-    448  f27c							;;  - we can use left shitsf to perform multiplcation by 2
-    449  f27c							;;  - for any number N, the value of N*5 = (N*2*2)+N
-    450  f27c							;;
-    451  f27c							;; For the upper nibble, since it's already times 16, we need to divide it
-    452  f27c							;; and then multiply by 5.
-    453  f27c							;;  - we can use right shifts to perform division by 2
-    454  f27c							;;  - for any number N, the value of (N/16)*5 = (N/2/2)+(N/2/2/2/2)
-    455  f27c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    456  f27c				   CalculateDigitOffset subroutine
-    457  f27c		       a2 01		      ldx	#1	; X register is the loop counter
-    458  f27e				   .PrepareScoreLoop		; this will loop twice, first X=1, and then X=0
-    459  f27e		       b5 84		      lda	Score,X	; load A with Timer (X=1) or Score (X=0)
-    460  f280		       29 0f		      and	#$0F
-    461  f282		       85 86		      sta	Temp	; save the value of A into Temp
-    462  f284		       0a		      asl
-    463  f285		       0a		      asl
-    464  f286		       65 86		      adc	Temp
-    465  f288		       95 87		      sta	OnesDigitOffset,X	; save A in OnesDigitOffset+1 or OnesDigitOffset+0
-    466  f28a
-    467  f28a		       b5 84		      lda	Score,X	; load A with Timer (X=1) or Score (X=0)
-    468  f28c		       29 f0		      and	#$F0	; remove the ones digit by masking 4 bits
-    469  f28e		       4a		      lsr		; N/2
-    470  f28f		       4a		      lsr		; N/4
-    471  f290		       85 86		      sta	Temp	; Store into temp N/4
-    472  f292		       4a		      lsr		; N/8
-    473  f293		       4a		      lsr		; N/16
-    474  f294		       65 86		      adc	Temp	; add N/16 with value in Temp(N/4)
-    475  f296		       95 89		      sta	TensDigitOffset,X	; save A in TensDigitOffset+1 or TensDigitOffset+0 
-    476  f298
-    477  f298		       ca		      dex
-    478  f299		       10 e3		      bpl	.PrepareScoreLoop	; while X >= 0 loop again
-    479  f29b		       60		      rts
-    480  f29c
-    481  f29c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    482  f29c							;; Subroutine to to waste 12 cycles
-    483  f29c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    484  f29c							;; jsr takes 6 cycles
-    485  f29c							;; rts takes 6 cycles
-    486  f29c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    487  f29c				   Sleep12Cycles subroutine
-    488  f29c		       60		      rts
-    489  f29d
-    490  f29d							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    491  f29d							;; Declare ROM lookup tables
-    492  f29d							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    493  f29d				   Digits
-    494  f29d		       77		      .byte.b	%01110111	; ### ###
-    495  f29e		       55		      .byte.b	%01010101	; # # # #
-    496  f29f		       55		      .byte.b	%01010101	; # # # #
-    497  f2a0		       55		      .byte.b	%01010101	; # # # #
-    498  f2a1		       77		      .byte.b	%01110111	; ### ###
-    499  f2a2
-    500  f2a2		       11		      .byte.b	%00010001	;   #	 #
-    501  f2a3		       11		      .byte.b	%00010001	;   #	 #
-    502  f2a4		       11		      .byte.b	%00010001	;   #	 #
-    503  f2a5		       11		      .byte.b	%00010001	;   #	 #
-    504  f2a6		       11		      .byte.b	%00010001	;   #	 #
-    505  f2a7
-    506  f2a7		       77		      .byte.b	%01110111	; ### ###
-    507  f2a8		       11		      .byte.b	%00010001	;   #	 #
-    508  f2a9		       77		      .byte.b	%01110111	; ### ###
-    509  f2aa		       44		      .byte.b	%01000100	; #   #
-    510  f2ab		       77		      .byte.b	%01110111	; ### ###
-    511  f2ac
-    512  f2ac		       77		      .byte.b	%01110111	; ### ###
-    513  f2ad		       11		      .byte.b	%00010001	;   #	 #
-    514  f2ae		       33		      .byte.b	%00110011	;  ##	##
-    515  f2af		       11		      .byte.b	%00010001	;   #	 #
-    516  f2b0		       77		      .byte.b	%01110111	; ### ###
-    517  f2b1
-    518  f2b1		       55		      .byte.b	%01010101	; # # # #
-    519  f2b2		       55		      .byte.b	%01010101	; # # # #
-    520  f2b3		       77		      .byte.b	%01110111	; ### ###
-    521  f2b4		       11		      .byte.b	%00010001	;   #	 #
-    522  f2b5		       11		      .byte.b	%00010001	;   #	 #
-    523  f2b6
-    524  f2b6		       77		      .byte.b	%01110111	; ### ###
-    525  f2b7		       44		      .byte.b	%01000100	; #   #
-    526  f2b8		       77		      .byte.b	%01110111	; ### ###
-    527  f2b9		       11		      .byte.b	%00010001	;   #	 #
-    528  f2ba		       77		      .byte.b	%01110111	; ### ###
-    529  f2bb
-    530  f2bb		       77		      .byte.b	%01110111	; ### ###
-    531  f2bc		       44		      .byte.b	%01000100	; #   #
-    532  f2bd		       77		      .byte.b	%01110111	; ### ###
-    533  f2be		       55		      .byte.b	%01010101	; # # # #
-    534  f2bf		       77		      .byte.b	%01110111	; ### ###
-    535  f2c0
-    536  f2c0		       77		      .byte.b	%01110111	; ### ###
-    537  f2c1		       11		      .byte.b	%00010001	;   #	 #
-    538  f2c2		       11		      .byte.b	%00010001	;   #	 #
-    539  f2c3		       11		      .byte.b	%00010001	;   #	 #
-    540  f2c4		       11		      .byte.b	%00010001	;   #	 #
-    541  f2c5
-    542  f2c5		       77		      .byte.b	%01110111	; ### ###
-    543  f2c6		       55		      .byte.b	%01010101	; # # # #
-    544  f2c7		       77		      .byte.b	%01110111	; ### ###
-    545  f2c8		       55		      .byte.b	%01010101	; # # # #
-    546  f2c9		       77		      .byte.b	%01110111	; ### ###
-    547  f2ca
-    548  f2ca		       77		      .byte.b	%01110111	; ### ###
-    549  f2cb		       55		      .byte.b	%01010101	; # # # #
-    550  f2cc		       77		      .byte.b	%01110111	; ### ###
-    551  f2cd		       11		      .byte.b	%00010001	;   #	 #
-    552  f2ce		       77		      .byte.b	%01110111	; ### ###
-    553  f2cf
-    554  f2cf		       22		      .byte.b	%00100010	;  #	#
-    555  f2d0		       55		      .byte.b	%01010101	; # # # #
-    556  f2d1		       77		      .byte.b	%01110111	; ### ###
-    557  f2d2		       55		      .byte.b	%01010101	; # # # #
-    558  f2d3		       55		      .byte.b	%01010101	; # # # #
-    559  f2d4
-    560  f2d4		       77		      .byte.b	%01110111	; ### ###
-    561  f2d5		       55		      .byte.b	%01010101	; # # # #
-    562  f2d6		       66		      .byte.b	%01100110	; ##  ##
-    563  f2d7		       55		      .byte.b	%01010101	; # # # #
-    564  f2d8		       77		      .byte.b	%01110111	; ### ###
-    565  f2d9
-    566  f2d9		       77		      .byte.b	%01110111	; ### ###
-    567  f2da		       44		      .byte.b	%01000100	; #   #
-    568  f2db		       44		      .byte.b	%01000100	; #   #
-    569  f2dc		       44		      .byte.b	%01000100	; #   #
-    570  f2dd		       77		      .byte.b	%01110111	; ### ###
-    571  f2de
-    572  f2de		       66		      .byte.b	%01100110	; ##  ##
-    573  f2df		       55		      .byte.b	%01010101	; # # # #
-    574  f2e0		       55		      .byte.b	%01010101	; # # # #
-    575  f2e1		       55		      .byte.b	%01010101	; # # # #
-    576  f2e2		       66		      .byte.b	%01100110	; ##  ##
-    577  f2e3
-    578  f2e3		       77		      .byte.b	%01110111	; ### ###
-    579  f2e4		       44		      .byte.b	%01000100	; #   #
-    580  f2e5		       77		      .byte.b	%01110111	; ### ###
-    581  f2e6		       44		      .byte.b	%01000100	; #   #
-    582  f2e7		       77		      .byte.b	%01110111	; ### ###
-    583  f2e8
-    584  f2e8		       77		      .byte.b	%01110111	; ### ###
-    585  f2e9		       44		      .byte.b	%01000100	; #   #
-    586  f2ea		       66		      .byte.b	%01100110	; ##  ##
-    587  f2eb		       44		      .byte.b	%01000100	; #   #
-    588  f2ec		       44		      .byte.b	%01000100	; #   #
-    589  f2ed
-    590  f2ed				   JetSprite
-    591  f2ed		       00		      .byte.b	#%00000000	;
-    592  f2ee		       14		      .byte.b	#%00010100	;   # #
-    593  f2ef		       7f		      .byte.b	#%01111111	; #######
-    594  f2f0		       3e		      .byte.b	#%00111110	;  #####
-    595  f2f1		       1c		      .byte.b	#%00011100	;   ###
-    596  f2f2		       1c		      .byte.b	#%00011100	;   ###
-    597  f2f3		       08		      .byte.b	#%00001000	;    #
-    598  f2f4		       08		      .byte.b	#%00001000	;    #
-    599  f2f5		       08		      .byte.b	#%00001000	;    #
-    600  f2f6
-    601  f2f6				   JetSpriteTurn
-    602  f2f6		       00		      .byte.b	#%00000000	;
-    603  f2f7		       08		      .byte.b	#%00001000	;    #
-    604  f2f8		       3e		      .byte.b	#%00111110	;  #####
-    605  f2f9		       1c		      .byte.b	#%00011100	;   ###
-    606  f2fa		       1c		      .byte.b	#%00011100	;   ###
-    607  f2fb		       1c		      .byte.b	#%00011100	;   ###
-    608  f2fc		       08		      .byte.b	#%00001000	;    #
-    609  f2fd		       08		      .byte.b	#%00001000	;    #
-    610  f2fe		       08		      .byte.b	#%00001000	;    #
-    611  f2ff
-    612  f2ff				   BomberSprite
-    613  f2ff		       00		      .byte.b	#%00000000	;
-    614  f300		       08		      .byte.b	#%00001000	;    #
-    615  f301		       08		      .byte.b	#%00001000	;    #
-    616  f302		       2a		      .byte.b	#%00101010	;  # # #
-    617  f303		       3e		      .byte.b	#%00111110	;  #####
-    618  f304		       7f		      .byte.b	#%01111111	; #######
-    619  f305		       2a		      .byte.b	#%00101010	;  # # #
-    620  f306		       08		      .byte.b	#%00001000	;    #
-    621  f307		       1c		      .byte.b	#%00011100	;   ###
-    622  f308
-    623  f308				   JetColor
-    624  f308		       00		      .byte.b	#$00
-    625  f309		       fe		      .byte.b	#$FE
-    626  f30a		       0c		      .byte.b	#$0C
-    627  f30b		       0e		      .byte.b	#$0E
-    628  f30c		       0e		      .byte.b	#$0E
-    629  f30d		       04		      .byte.b	#$04
-    630  f30e		       ba		      .byte.b	#$BA
-    631  f30f		       0e		      .byte.b	#$0E
-    632  f310		       08		      .byte.b	#$08
-    633  f311
-    634  f311				   JetColorTurn
-    635  f311		       00		      .byte.b	#$00
-    636  f312		       fe		      .byte.b	#$FE
-    637  f313		       0c		      .byte.b	#$0C
-    638  f314		       0e		      .byte.b	#$0E
-    639  f315		       0e		      .byte.b	#$0E
-    640  f316		       04		      .byte.b	#$04
-    641  f317		       0e		      .byte.b	#$0E
-    642  f318		       0e		      .byte.b	#$0E
-    643  f319		       08		      .byte.b	#$08
-    644  f31a
-    645  f31a				   BomberColor
-    646  f31a		       00		      .byte.b	#$00
-    647  f31b		       32		      .byte.b	#$32
-    648  f31c		       32		      .byte.b	#$32
-    649  f31d		       0e		      .byte.b	#$0E
-    650  f31e		       40		      .byte.b	#$40
-    651  f31f		       40		      .byte.b	#$40
-    652  f320		       40		      .byte.b	#$40
-    653  f321		       40		      .byte.b	#$40
-    654  f322		       40		      .byte.b	#$40
-    655  f323
-    656  f323							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    657  f323							;; Complete ROM size with exactly 4KB
-    658  f323							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    659  fffc					      org	$FFFC
-    660  fffc		       00 f0		      word.w	Reset	; write 2 bytes with the program reset address
-    661  fffe		       00 f0		      word.w	Reset	; write 2 bytes with the interruption vector
+     73  f027							;; Declare a MACRO to check if we should dispaly the missile 0
+     74  f027							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     75  f027					      MAC	draw_missile
+     76  f027					      lda	#%00000000
+     77  f027					      cpx	MissileYPos	; compare X (current scanline) with missile Y pos
+     78  f027					      bne	.SkipMissileDraw	; if (X != missile Y position), skip draw
+     79  f027				   .DrawMissile
+     80  f027					      lda	#%00000010
+     81  f027					      inc	MissileYPos
+     82  f027				   .SkipMissileDraw
+     83  f027					      sta	ENAM0	; store the correct value in the TIA missile register
+     84  f027					      ENDM
+     85  f027
+     86  f027							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     87  f027							;; Initialize pointers to the correct lookup table addresses
+     88  f027							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     89  f027		       a9 23		      lda	#<JetSprite
+     90  f029		       85 8d		      sta	JetSpritePtr	; lo-byte pointer for jet sprite lookup table
+     91  f02b		       a9 f3		      lda	#>JetSprite
+     92  f02d		       85 8e		      sta	JetSpritePtr+1	; hi-byte pointer for jet sprite lookup table
+     93  f02f
+     94  f02f		       a9 3e		      lda	#<JetColor
+     95  f031		       85 8f		      sta	JetColorPtr	; lo-byte pointer for jet color lookup table
+     96  f033		       a9 f3		      lda	#>JetColor
+     97  f035		       85 90		      sta	JetColorPtr+1	; hi-byte pointer for jet color lookup table
+     98  f037
+     99  f037		       a9 35		      lda	#<BomberSprite
+    100  f039		       85 91		      sta	BomberSpritePtr	; lo-byte pointer for enemy sprite lookup table
+    101  f03b		       a9 f3		      lda	#>BomberSprite
+    102  f03d		       85 92		      sta	BomberSpritePtr+1	; hi-byte pointer for enemy sprite lookup table
+    103  f03f
+    104  f03f		       a9 50		      lda	#<BomberColor
+    105  f041		       85 93		      sta	BomberColorPtr	; lo-byte pointer for enemy color lookup table
+    106  f043		       a9 f3		      lda	#>BomberColor
+    107  f045		       85 94		      sta	BomberColorPtr+1	; hi-byte pointer for enemy color lookup table
+    108  f047
+    109  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    110  f047							;; Start the main display loop and frame rendering
+    111  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    112  f047				   StartFrame
+    113  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    114  f047							;; Display VSYNC and VBLANK
+    115  f047							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    116  f047		       a9 02		      lda	#2
+    117  f049		       85 01		      sta	VBLANK	; turn on VBLANK
+    118  f04b		       85 00		      sta	VSYNC	; turn on VSYNC
+    119  f04d					      REPEAT	3
+    120  f04d		       85 02		      sta	WSYNC	; recommended lines of VSYNC
+    119  f04d					      REPEND
+    120  f04f		       85 02		      sta	WSYNC	; recommended lines of VSYNC
+    119  f04f					      REPEND
+    120  f051		       85 02		      sta	WSYNC	; recommended lines of VSYNC
+    121  f053					      REPEND
+    122  f053		       a9 00		      lda	#0
+    123  f055		       85 00		      sta	VSYNC	; turn off VSYNC
+    124  f057					      REPEAT	33
+    125  f057		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f057					      REPEND
+    125  f059		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f059					      REPEND
+    125  f05b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f05b					      REPEND
+    125  f05d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f05d					      REPEND
+    125  f05f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f05f					      REPEND
+    125  f061		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f061					      REPEND
+    125  f063		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f063					      REPEND
+    125  f065		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f065					      REPEND
+    125  f067		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f067					      REPEND
+    125  f069		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f069					      REPEND
+    125  f06b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f06b					      REPEND
+    125  f06d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f06d					      REPEND
+    125  f06f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f06f					      REPEND
+    125  f071		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f071					      REPEND
+    125  f073		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f073					      REPEND
+    125  f075		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f075					      REPEND
+    125  f077		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f077					      REPEND
+    125  f079		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f079					      REPEND
+    125  f07b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f07b					      REPEND
+    125  f07d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f07d					      REPEND
+    125  f07f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f07f					      REPEND
+    125  f081		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f081					      REPEND
+    125  f083		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f083					      REPEND
+    125  f085		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f085					      REPEND
+    125  f087		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f087					      REPEND
+    125  f089		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f089					      REPEND
+    125  f08b		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f08b					      REPEND
+    125  f08d		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f08d					      REPEND
+    125  f08f		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f08f					      REPEND
+    125  f091		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f091					      REPEND
+    125  f093		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f093					      REPEND
+    125  f095		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    124  f095					      REPEND
+    125  f097		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    126  f099					      REPEND
+    127  f099
+    128  f099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    129  f099							;; Calculations and task performed in the the VBlank
+    130  f099							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    131  f099		       a5 80		      lda	JetXPos
+    132  f09b		       a0 00		      ldy	#0
+    133  f09d		       20 75 f2 	      jsr	SetObjectXPos	; set player0 horizontal position
+    134  f0a0
+    135  f0a0		       a5 82		      lda	BomberXPos
+    136  f0a2		       a0 01		      ldy	#1
+    137  f0a4		       20 75 f2 	      jsr	SetObjectXPos	; set bomber horizontal position
+    138  f0a7
+    139  f0a7		       a5 84		      lda	MissileXPos
+    140  f0a9		       a0 02		      ldy	#2
+    141  f0ab		       20 75 f2 	      jsr	SetObjectXPos	; set missile horizontal position
+    142  f0ae
+    143  f0ae		       20 b2 f2 	      jsr	CalculateDigitOffset	; calculate the scoreboard digit lookup table offset
+    144  f0b1
+    145  f0b1		       85 02		      sta	WSYNC
+    146  f0b3		       85 2a		      sta	HMOVE	; apply the horizontal offsets previously set by the routine
+    147  f0b5
+    148  f0b5		       a9 00		      lda	#0
+    149  f0b7		       85 01		      sta	VBLANK	; turn off VBLANK
+    150  f0b9
+    151  f0b9							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    152  f0b9							;; Display the scoreboard
+    153  f0b9							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    154  f0b9		       a9 00		      lda	#0	; clear TIA registers before each new frame
+    155  f0bb		       85 09		      sta	COLUBK
+    156  f0bd		       85 0d		      sta	PF0
+    157  f0bf		       85 0e		      sta	PF1
+    158  f0c1		       85 0f		      sta	PF2
+    159  f0c3		       85 1b		      sta	GRP0
+    160  f0c5		       85 1c		      sta	GRP1
+    161  f0c7		       85 0a		      sta	CTRLPF
+    162  f0c9
+    163  f0c9		       a9 1e		      lda	#$1E
+    164  f0cb		       85 08		      sta	COLUPF
+    165  f0cd
+    166  f0cd		       a2 05		      ldx	#DIGITS_HEIGHT
+    167  f0cf				   .ScoreDigitLoop
+    168  f0cf		       a4 8b		      ldy	TensDigitOffset	; get the tens digit offset for the Score
+    169  f0d1		       b9 d3 f2 	      lda	Digits,Y	; load the bit pattern from lookup table + Y offset
+    170  f0d4		       29 f0		      and	#$F0	; mask/remove the graphics for the ones digit from the A register
+    171  f0d6		       85 97		      sta	ScoreSprite	; save the score tens digit pattern in a variable
+    172  f0d8
+    173  f0d8		       a4 89		      ldy	OnesDigitOffset
+    174  f0da		       b9 d3 f2 	      lda	Digits,Y
+    175  f0dd		       29 0f		      and	#$0F	; remove the graphics for the tens digit from the A register
+    176  f0df		       05 97		      ora	ScoreSprite	; merge it with the saved tens digit sprite
+    177  f0e1		       85 97		      sta	ScoreSprite	; and save it to ScoreSprite
+    178  f0e3		       85 02		      sta	WSYNC
+    179  f0e5		       85 0e		      sta	PF1	; update the playfield to display the Score sprite
+    180  f0e7
+    181  f0e7		       a4 8c		      ldy	TensDigitOffset+1	; get the tens digit offset for the Score
+    182  f0e9		       b9 d3 f2 	      lda	Digits,Y	; load the bit pattern from lookup table + Y offset
+    183  f0ec		       29 f0		      and	#$F0	; mask/remove the graphics for the ones digit from the A register
+    184  f0ee		       85 98		      sta	TimerSprite	; save the score tens digit pattern in a variable
+    185  f0f0
+    186  f0f0		       a4 8a		      ldy	OnesDigitOffset+1
+    187  f0f2		       b9 d3 f2 	      lda	Digits,Y
+    188  f0f5		       29 0f		      and	#$0F	; remove the graphics for the tens digit from the A register
+    189  f0f7		       05 98		      ora	TimerSprite	; merge it with the saved tens digit sprite
+    190  f0f9		       85 98		      sta	TimerSprite	; and save it to ScoreSprite
+    191  f0fb
+    192  f0fb		       20 d2 f2 	      jsr	Sleep12Cycles	; waste some cycles
+    193  f0fe
+    194  f0fe		       85 0e		      sta	PF1	; update the playfield for Timer display
+    195  f100
+    196  f100		       a4 97		      ldy	ScoreSprite	; preload for the next scanline
+    197  f102		       85 02		      sta	WSYNC
+    198  f104
+    199  f104		       84 0e		      sty	PF1	; update playfield for the score display
+    200  f106		       e6 8b		      inc	TensDigitOffset
+    201  f108		       e6 8c		      inc	TensDigitOffset+1
+    202  f10a		       e6 89		      inc	OnesDigitOffset
+    203  f10c		       e6 8a		      inc	OnesDigitOffset+1	; increment all digits for the next line of data
+    204  f10e
+    205  f10e		       20 d2 f2 	      jsr	Sleep12Cycles
+    206  f111
+    207  f111		       ca		      dex
+    208  f112		       85 0e		      sta	PF1	; update playfield for timer display
+    209  f114		       d0 b9		      bne	.ScoreDigitLoop
+    210  f116
+    211  f116		       85 02		      sta	WSYNC
+    212  f118		       a9 00		      lda	#0
+    213  f11a		       85 0d		      sta	PF0
+    214  f11c		       85 0e		      sta	PF1
+    215  f11e		       85 0f		      sta	PF2
+    216  f120		       85 02		      sta	WSYNC
+    217  f122		       85 02		      sta	WSYNC
+    218  f124		       85 02		      sta	WSYNC
+    219  f126
+    220  f126							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    221  f126							;; 96 visible scanlines for main game (because 2-line kernel)
+    222  f126							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    223  f126				   GameVisibleLine
+    224  f126		       a5 99		      lda	TerrainColor
+    225  f128		       85 09		      sta	COLUBK	; set background color to terrain color
+    226  f12a		       a5 9a		      lda	RiverColor
+    227  f12c		       85 08		      sta	COLUPF	; set playfield to river color
+    228  f12e		       a9 01		      lda	#1
+    229  f130		       85 0a		      sta	CTRLPF	; enable playfield reflection
+    230  f132		       a9 f0		      lda	#$F0
+    231  f134		       85 0d		      sta	PF0	; setting PF0 bit pattern
+    232  f136		       a9 fc		      lda	#$FC
+    233  f138		       85 0e		      sta	PF1
+    234  f13a		       a9 00		      lda	#0
+    235  f13c		       85 0f		      sta	PF2
+    236  f13e
+    237  f13e		       a2 55		      ldx	#85	; X counts the number of remaining scanlines
+    238  f140				   .GameLineLoop		; . has no special meaning, tutor uses it to indicate that this segment is within the above segment
+      0  f140					      DRAW_MISSILE		; macro to check if we should draw the missile
+      1  f140		       a9 00		      lda	#%00000000
+      2  f142		       e4 85		      cpx	MissileYPos
+      3  f144		       d0 04		      bne	.SkipMissileDraw
+      4  f146				   .DrawMissile
+      5  f146		       a9 02		      lda	#%00000010
+      6  f148		       e6 85		      inc	MissileYPos
+      7  f14a				   .SkipMissileDraw
+      8  f14a		       85 1d		      sta	ENAM0
+    240  f14c
+    241  f14c				   .AreWeInsideJetSprite
+    242  f14c		       8a		      txa		; transfer X to A
+    243  f14d		       38		      sec		; Set carry flag before subtraction
+    244  f14e		       e5 81		      sbc	JetYPos	; subtract sprite Y-coordinate
+    245  f150		       c9 09		      cmp	#JET_HEIGHT	; are we inside the sprite height
+    246  f152		       90 02		      bcc	.DrawJetSprite	; if result < SpriteHeight, call the draw routine
+    247  f154		       a9 00		      lda	#0	; else, set lookup index to zero
+    248  f156				   .DrawJetSprite
+    249  f156		       18		      clc		; clear carry flag before addition
+    250  f157		       65 95		      adc	JetAnimOffset	; offset animation to jump to correct frame 
+    251  f159		       a8		      tay
+    252  f15a		       b1 8d		      lda	(JetSpritePtr),Y	; load player0 bitmap data from lookup table
+    253  f15c		       85 02		      sta	WSYNC
+    254  f15e		       85 1b		      sta	GRP0	; set graphics for player0
+    255  f160		       b1 8f		      lda	(JetColorPtr),Y	; load player0 color data from lookup table
+    256  f162		       85 06		      sta	COLUP0	; set color of player0
+    257  f164
+    258  f164				   .AreWeInsideBomber
+    259  f164		       8a		      txa		; transfer X to A
+    260  f165		       38		      sec		; Set carry flag before subtraction
+    261  f166		       e5 83		      sbc	BomberYPos	; subtract sprite Y-coordinate
+    262  f168		       c9 09		      cmp	#BOMBER_HEIGHT	; are we inside the sprite height
+    263  f16a		       90 02		      bcc	.DrawBomberSprite	; if result < SpriteHeight, call the draw routine
+    264  f16c		       a9 00		      lda	#0	; else, set lookup index to zero
+    265  f16e				   .DrawBomberSprite
+    266  f16e		       a8		      tay
+    267  f16f		       a9 05		      lda	#%00000101
+    268  f171		       85 05		      sta	NUSIZ1	; stretch bomber sprite
+    269  f173		       b1 91		      lda	(BomberSpritePtr),Y	; load player0 bitmap data from lookup table
+    270  f175		       85 02		      sta	WSYNC
+    271  f177		       85 1c		      sta	GRP1	; set graphics for player1
+    272  f179		       b1 93		      lda	(BomberColorPtr),Y	; load player0 color data from lookup table
+    273  f17b		       85 07		      sta	COLUP1	; set color of player1
+    274  f17d
+    275  f17d		       ca		      dex
+    276  f17e		       d0 c0		      bne	.GameLineLoop
+    277  f180
+    278  f180		       a9 00		      lda	#0
+    279  f182		       85 95		      sta	JetAnimOffset	; always reset animation offset to 0
+    280  f184
+    281  f184		       85 02		      sta	WSYNC
+    282  f186
+    283  f186							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    284  f186							;; Display Overscan
+    285  f186							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    286  f186		       a9 02		      lda	#2
+    287  f188		       85 01		      sta	VBLANK	; turn VBLANK on
+    288  f18a					      REPEAT	30
+    289  f18a		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f18a					      REPEND
+    289  f18c		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f18c					      REPEND
+    289  f18e		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f18e					      REPEND
+    289  f190		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f190					      REPEND
+    289  f192		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f192					      REPEND
+    289  f194		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f194					      REPEND
+    289  f196		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f196					      REPEND
+    289  f198		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f198					      REPEND
+    289  f19a		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f19a					      REPEND
+    289  f19c		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f19c					      REPEND
+    289  f19e		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f19e					      REPEND
+    289  f1a0		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1a0					      REPEND
+    289  f1a2		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1a2					      REPEND
+    289  f1a4		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1a4					      REPEND
+    289  f1a6		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1a6					      REPEND
+    289  f1a8		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1a8					      REPEND
+    289  f1aa		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1aa					      REPEND
+    289  f1ac		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1ac					      REPEND
+    289  f1ae		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1ae					      REPEND
+    289  f1b0		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1b0					      REPEND
+    289  f1b2		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1b2					      REPEND
+    289  f1b4		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1b4					      REPEND
+    289  f1b6		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1b6					      REPEND
+    289  f1b8		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1b8					      REPEND
+    289  f1ba		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1ba					      REPEND
+    289  f1bc		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1bc					      REPEND
+    289  f1be		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1be					      REPEND
+    289  f1c0		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1c0					      REPEND
+    289  f1c2		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    288  f1c2					      REPEND
+    289  f1c4		       85 02		      sta	WSYNC	; recommended lines of VBLANK
+    290  f1c6					      REPEND
+    291  f1c6		       a9 00		      lda	#0
+    292  f1c8		       85 01		      sta	VBLANK	; turn off VBLANK
+    293  f1ca
+    294  f1ca							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    295  f1ca							;; Process joystick input for player0
+    296  f1ca							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    297  f1ca				   CheckP0Up
+    298  f1ca		       a9 10		      lda	#%00010000	; player0 joystick up
+    299  f1cc		       2c 80 02 	      bit	SWCHA
+    300  f1cf		       d0 0c		      bne	CheckP0Down	; if bit pattern doesn't match, jump to next check
+    301  f1d1				   .checkUpPFLimit
+    302  f1d1		       a5 81		      lda	JetYPos
+    303  f1d3		       c9 4b		      cmp	#75
+    304  f1d5		       f0 06		      beq	CheckP0Down	; if JetYPos == 100, jump to next check
+    305  f1d7				   .P0UpPressed
+    306  f1d7		       e6 81		      inc	JetYPos
+    307  f1d9		       a9 00		      lda	#0
+    308  f1db		       85 95		      sta	JetAnimOffset
+    309  f1dd
+    310  f1dd				   CheckP0Down
+    311  f1dd		       a9 20		      lda	#%00100000	; player0 joystick up
+    312  f1df		       2c 80 02 	      bit	SWCHA
+    313  f1e2		       d0 0c		      bne	CheckP0Left	; if bit pattern doesn't match, jump to next 
+    314  f1e4				   .checkDownPFLimit
+    315  f1e4		       a5 81		      lda	JetYPos
+    316  f1e6		       c9 00		      cmp	#0
+    317  f1e8		       f0 06		      beq	CheckP0Left
+    318  f1ea				   .P0DownPressed
+    319  f1ea		       c6 81		      dec	JetYPos
+    320  f1ec		       a9 00		      lda	#0
+    321  f1ee		       85 95		      sta	JetAnimOffset
+    322  f1f0
+    323  f1f0				   CheckP0Left
+    324  f1f0		       a9 40		      lda	#%01000000	; player0 joystick up
+    325  f1f2		       2c 80 02 	      bit	SWCHA
+    326  f1f5		       d0 0c		      bne	CheckP0Right	; if bit pattern doesn't match, jump to next 
+    327  f1f7				   .checkLeftPFLimit
+    328  f1f7		       a5 80		      lda	JetXPos
+    329  f1f9		       c9 23		      cmp	#35
+    330  f1fb		       f0 06		      beq	CheckP0Right
+    331  f1fd				   .P0LeftPressed
+    332  f1fd		       c6 80		      dec	JetXPos
+    333  f1ff		       a9 09		      lda	#JET_HEIGHT
+    334  f201		       85 95		      sta	JetAnimOffset
+    335  f203
+    336  f203				   CheckP0Right
+    337  f203		       a9 80		      lda	#%10000000	; player0 joystick up
+    338  f205		       2c 80 02 	      bit	SWCHA
+    339  f208		       d0 0c		      bne	CheckButtonPressed	; if bit pattern doesn't match, jump to next
+    340  f20a				   .checkRightPFLimit
+    341  f20a		       a5 80		      lda	JetXPos
+    342  f20c		       c9 64		      cmp	#100
+    343  f20e		       f0 06		      beq	CheckButtonPressed
+    344  f210				   .P0RightPressed
+    345  f210		       e6 80		      inc	JetXPos
+    346  f212		       a9 09		      lda	#JET_HEIGHT
+    347  f214		       85 95		      sta	JetAnimOffset
+    348  f216
+    349  f216				   CheckButtonPressed
+    350  f216		       a9 80		      lda	#%10000000
+    351  f218		       24 0c		      bit	INPT4
+    352  f21a		       d0 0e		      bne	EndInputCheck	; if button is not pressed, skip to end
+    353  f21c				   .ButtonPressed
+    354  f21c		       a5 81		      lda	JetYPos
+    355  f21e		       18		      clc
+    356  f21f		       69 08		      adc	#8	; set missile infront of jet
+    357  f221		       85 85		      sta	MissileYPos
+    358  f223		       a5 80		      lda	JetXPos
+    359  f225		       18		      clc
+    360  f226		       69 05		      adc	#5	; set missile in the middle of the jet
+    361  f228		       85 84		      sta	MissileXPos
+    362  f22a				   EndInputCheck		; fallback when no input was performed
+    363  f22a
+    364  f22a							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    365  f22a							;; Calculations to update position for next frame
+    366  f22a							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    367  f22a				   UpdateBomberPosition
+    368  f22a		       a5 83		      lda	BomberYPos
+    369  f22c		       18		      clc
+    370  f22d		       c9 00		      cmp	#0
+    371  f22f		       30 05		      bmi	.ResetBomberPosition	; if < 0, reset y-position
+    372  f231		       c6 83		      dec	BomberYPos	; else decrement y-position
+    373  f233		       4c 42 f2 	      jmp	EndPositionUpdate	; jump to EndPositionUpdate to bypass reset
+    374  f236				   .ResetBomberPosition
+    375  f236		       20 94 f2 	      jsr	GetRandomBomberPos	; call subroutine for random x-position
+    376  f239				   .SetScoreValues
+    377  f239		       f8		      sed		; enable BCD(decimal) mode
+    378  f23a		       a5 87		      lda	Timer
+    379  f23c		       18		      clc
+    380  f23d		       69 01		      adc	#1
+    381  f23f		       85 87		      sta	Timer	; add 1 to timer (BCD does not like INC instruction)
+    382  f241		       d8		      cld		; disable BCD(decimal) mode
+    383  f242				   EndPositionUpdate
+    384  f242
+    385  f242							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    386  f242							;; Check for object collision
+    387  f242							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    388  f242				   CheckCollisionP0P1
+    389  f242		       a9 80		      lda	#%10000000
+    390  f244		       24 07		      bit	CXPPMM	; check CXPPMM bit 7 with the above pattern
+    391  f246		       d0 06		      bne	.P0P1Collided	; if collided, game over
+    392  f248		       20 6c f2 	      jsr	SetBackgroundColor
+    393  f24b		       4c 51 f2 	      jmp	CheckCollisionM0P1	; else, skip to next check
+    394  f24e				   .P0P1Collided
+    395  f24e		       20 89 f2 	      jsr	GameOver	; call GameOver subroutine
+    396  f251
+    397  f251				   CheckCollisionM0P1
+    398  f251		       a9 80		      lda	#%10000000
+    399  f253		       24 00		      bit	CXM0P
+    400  f255		       d0 03		      bne	.M0P1Collided
+    401  f257		       4c 67 f2 	      jmp	EndCollisionCheck
+    402  f25a				   .M0P1Collided
+    403  f25a		       f8		      sed
+    404  f25b		       a5 86		      lda	Score
+    405  f25d		       18		      clc
+    406  f25e		       69 01		      adc	#1
+    407  f260		       85 86		      sta	Score
+    408  f262		       d8		      cld		; increment score using BCD
+    409  f263		       a9 00		      lda	#0
+    410  f265		       85 85		      sta	MissileYPos
+    411  f267
+    412  f267				   EndCollisionCheck
+    413  f267		       85 2c		      sta	CXCLR	; clear all collision checks
+    414  f269
+    415  f269							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    416  f269							;; Loop back to start a brand new frame
+    417  f269							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    418  f269		       4c 47 f0 	      jmp	StartFrame	; loop back to next frame
+    419  f26c
+    420  f26c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    421  f26c							;; Set playfield and terrain color
+    422  f26c							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    423  f26c				   SetBackgroundColor subroutine
+    424  f26c		       a9 c2		      lda	#$C2	; green
+    425  f26e		       85 99		      sta	TerrainColor
+    426  f270		       a9 84		      lda	#$84	; blue
+    427  f272		       85 9a		      sta	RiverColor
+    428  f274		       60		      rts
+    429  f275
+    430  f275							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    431  f275							;; Subroutine to handle object horizontal position
+    432  f275							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    433  f275							;; A is the target x-coord position in pixels of our object
+    434  f275							;; Y is the object type (0:player, 1:bomber, 2:missle0, 3:missile1, 4:ball)
+    435  f275							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    436  f275				   SetObjectXPos subroutine
+    437  f275		       85 02		      sta	WSYNC
+    438  f277		       38		      sec
+    439  f278				   .Div15Loop
+    440  f278		       e9 0f		      sbc	#15
+    441  f27a		       b0 fc		      bcs	.Div15Loop	; loop until carry-flag is clear
+    442  f27c		       49 07		      eor	#7
+    443  f27e		       0a		      asl
+    444  f27f		       0a		      asl
+    445  f280		       0a		      asl
+    446  f281		       0a		      asl		; four shift lefts to get only the top 4 bits
+    447  f282		       99 20 00 	      sta	HMP0,Y	; store the fine offset to the correct HMxx
+    448  f285		       99 10 00 	      sta	RESP0,Y	; fix object position in 15-step increment
+    449  f288		       60		      rts
+    450  f289
+    451  f289							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    452  f289							;; Game Over subroutine
+    453  f289							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    454  f289				   GameOver   subroutine
+    455  f289		       a9 30		      lda	#$30
+    456  f28b		       85 99		      sta	TerrainColor	; set terrain color to red
+    457  f28d		       85 9a		      sta	RiverColor	; set river color to red
+    458  f28f		       a9 00		      lda	#0
+    459  f291		       85 86		      sta	Score	; Score = 0
+    460  f293		       60		      rts
+    461  f294
+    462  f294							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    463  f294							;; Subroutine to generate a Linear-Feedback Shift Resgistar random number
+    464  f294							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    465  f294				   GetRandomBomberPos subroutine
+    466  f294		       a5 96		      lda	Random
+    467  f296		       0a		      asl
+    468  f297		       45 96		      eor	Random
+    469  f299		       0a		      asl
+    470  f29a		       45 96		      eor	Random
+    471  f29c		       0a		      asl
+    472  f29d		       0a		      asl
+    473  f29e		       45 96		      eor	Random
+    474  f2a0		       0a		      asl
+    475  f2a1		       26 96		      rol	Random	; performs a series of shifts and bit operations
+    476  f2a3		       4a		      lsr
+    477  f2a4		       4a		      lsr		; divide the value by 4 with 2 right shifts
+    478  f2a5		       85 82		      sta	BomberXPos
+    479  f2a7		       a9 1e		      lda	#30
+    480  f2a9		       65 82		      adc	BomberXPos
+    481  f2ab		       85 82		      sta	BomberXPos
+    482  f2ad
+    483  f2ad		       a9 60		      lda	#96
+    484  f2af		       85 83		      sta	BomberYPos
+    485  f2b1		       60		      rts
+    486  f2b2
+    487  f2b2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    488  f2b2							;; Subroutine to handle scoreboard digits to be displayed on the screen
+    489  f2b2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    490  f2b2							;; Convert the high and low nibbles of the variable Score and Timer
+    491  f2b2							;; into the offsets of digits lookup table so the values can be displayed.
+    492  f2b2							;; Each digit has a height of 5 bytes in the lookup table.
+    493  f2b2							;;
+    494  f2b2							;; For the low nibble we need to multiple by 5
+    495  f2b2							;;  - we can use left shitsf to perform multiplcation by 2
+    496  f2b2							;;  - for any number N, the value of N*5 = (N*2*2)+N
+    497  f2b2							;;
+    498  f2b2							;; For the upper nibble, since it's already times 16, we need to divide it
+    499  f2b2							;; and then multiply by 5.
+    500  f2b2							;;  - we can use right shifts to perform division by 2
+    501  f2b2							;;  - for any number N, the value of (N/16)*5 = (N/2/2)+(N/2/2/2/2)
+    502  f2b2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    503  f2b2				   CalculateDigitOffset subroutine
+    504  f2b2		       a2 01		      ldx	#1	; X register is the loop counter
+    505  f2b4				   .PrepareScoreLoop		; this will loop twice, first X=1, and then X=0
+    506  f2b4		       b5 86		      lda	Score,X	; load A with Timer (X=1) or Score (X=0)
+    507  f2b6		       29 0f		      and	#$0F
+    508  f2b8		       85 88		      sta	Temp	; save the value of A into Temp
+    509  f2ba		       0a		      asl
+    510  f2bb		       0a		      asl
+    511  f2bc		       65 88		      adc	Temp
+    512  f2be		       95 89		      sta	OnesDigitOffset,X	; save A in OnesDigitOffset+1 or OnesDigitOffset+0
+    513  f2c0
+    514  f2c0		       b5 86		      lda	Score,X	; load A with Timer (X=1) or Score (X=0)
+    515  f2c2		       29 f0		      and	#$F0	; remove the ones digit by masking 4 bits
+    516  f2c4		       4a		      lsr		; N/2
+    517  f2c5		       4a		      lsr		; N/4
+    518  f2c6		       85 88		      sta	Temp	; Store into temp N/4
+    519  f2c8		       4a		      lsr		; N/8
+    520  f2c9		       4a		      lsr		; N/16
+    521  f2ca		       65 88		      adc	Temp	; add N/16 with value in Temp(N/4)
+    522  f2cc		       95 8b		      sta	TensDigitOffset,X	; save A in TensDigitOffset+1 or TensDigitOffset+0 
+    523  f2ce
+    524  f2ce		       ca		      dex
+    525  f2cf		       10 e3		      bpl	.PrepareScoreLoop	; while X >= 0 loop again
+    526  f2d1		       60		      rts
+    527  f2d2
+    528  f2d2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    529  f2d2							;; Subroutine to to waste 12 cycles
+    530  f2d2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    531  f2d2							;; jsr takes 6 cycles
+    532  f2d2							;; rts takes 6 cycles
+    533  f2d2							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    534  f2d2				   Sleep12Cycles subroutine
+    535  f2d2		       60		      rts
+    536  f2d3
+    537  f2d3							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    538  f2d3							;; Declare ROM lookup tables
+    539  f2d3							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    540  f2d3				   Digits
+    541  f2d3		       77		      .byte.b	%01110111	; ### ###
+    542  f2d4		       55		      .byte.b	%01010101	; # # # #
+    543  f2d5		       55		      .byte.b	%01010101	; # # # #
+    544  f2d6		       55		      .byte.b	%01010101	; # # # #
+    545  f2d7		       77		      .byte.b	%01110111	; ### ###
+    546  f2d8
+    547  f2d8		       11		      .byte.b	%00010001	;   #	 #
+    548  f2d9		       11		      .byte.b	%00010001	;   #	 #
+    549  f2da		       11		      .byte.b	%00010001	;   #	 #
+    550  f2db		       11		      .byte.b	%00010001	;   #	 #
+    551  f2dc		       11		      .byte.b	%00010001	;   #	 #
+    552  f2dd
+    553  f2dd		       77		      .byte.b	%01110111	; ### ###
+    554  f2de		       11		      .byte.b	%00010001	;   #	 #
+    555  f2df		       77		      .byte.b	%01110111	; ### ###
+    556  f2e0		       44		      .byte.b	%01000100	; #   #
+    557  f2e1		       77		      .byte.b	%01110111	; ### ###
+    558  f2e2
+    559  f2e2		       77		      .byte.b	%01110111	; ### ###
+    560  f2e3		       11		      .byte.b	%00010001	;   #	 #
+    561  f2e4		       33		      .byte.b	%00110011	;  ##	##
+    562  f2e5		       11		      .byte.b	%00010001	;   #	 #
+    563  f2e6		       77		      .byte.b	%01110111	; ### ###
+    564  f2e7
+    565  f2e7		       55		      .byte.b	%01010101	; # # # #
+    566  f2e8		       55		      .byte.b	%01010101	; # # # #
+    567  f2e9		       77		      .byte.b	%01110111	; ### ###
+    568  f2ea		       11		      .byte.b	%00010001	;   #	 #
+    569  f2eb		       11		      .byte.b	%00010001	;   #	 #
+    570  f2ec
+    571  f2ec		       77		      .byte.b	%01110111	; ### ###
+    572  f2ed		       44		      .byte.b	%01000100	; #   #
+    573  f2ee		       77		      .byte.b	%01110111	; ### ###
+    574  f2ef		       11		      .byte.b	%00010001	;   #	 #
+    575  f2f0		       77		      .byte.b	%01110111	; ### ###
+    576  f2f1
+    577  f2f1		       77		      .byte.b	%01110111	; ### ###
+    578  f2f2		       44		      .byte.b	%01000100	; #   #
+    579  f2f3		       77		      .byte.b	%01110111	; ### ###
+    580  f2f4		       55		      .byte.b	%01010101	; # # # #
+    581  f2f5		       77		      .byte.b	%01110111	; ### ###
+    582  f2f6
+    583  f2f6		       77		      .byte.b	%01110111	; ### ###
+    584  f2f7		       11		      .byte.b	%00010001	;   #	 #
+    585  f2f8		       11		      .byte.b	%00010001	;   #	 #
+    586  f2f9		       11		      .byte.b	%00010001	;   #	 #
+    587  f2fa		       11		      .byte.b	%00010001	;   #	 #
+    588  f2fb
+    589  f2fb		       77		      .byte.b	%01110111	; ### ###
+    590  f2fc		       55		      .byte.b	%01010101	; # # # #
+    591  f2fd		       77		      .byte.b	%01110111	; ### ###
+    592  f2fe		       55		      .byte.b	%01010101	; # # # #
+    593  f2ff		       77		      .byte.b	%01110111	; ### ###
+    594  f300
+    595  f300		       77		      .byte.b	%01110111	; ### ###
+    596  f301		       55		      .byte.b	%01010101	; # # # #
+    597  f302		       77		      .byte.b	%01110111	; ### ###
+    598  f303		       11		      .byte.b	%00010001	;   #	 #
+    599  f304		       77		      .byte.b	%01110111	; ### ###
+    600  f305
+    601  f305		       22		      .byte.b	%00100010	;  #	#
+    602  f306		       55		      .byte.b	%01010101	; # # # #
+    603  f307		       77		      .byte.b	%01110111	; ### ###
+    604  f308		       55		      .byte.b	%01010101	; # # # #
+    605  f309		       55		      .byte.b	%01010101	; # # # #
+    606  f30a
+    607  f30a		       77		      .byte.b	%01110111	; ### ###
+    608  f30b		       55		      .byte.b	%01010101	; # # # #
+    609  f30c		       66		      .byte.b	%01100110	; ##  ##
+    610  f30d		       55		      .byte.b	%01010101	; # # # #
+    611  f30e		       77		      .byte.b	%01110111	; ### ###
+    612  f30f
+    613  f30f		       77		      .byte.b	%01110111	; ### ###
+    614  f310		       44		      .byte.b	%01000100	; #   #
+    615  f311		       44		      .byte.b	%01000100	; #   #
+    616  f312		       44		      .byte.b	%01000100	; #   #
+    617  f313		       77		      .byte.b	%01110111	; ### ###
+    618  f314
+    619  f314		       66		      .byte.b	%01100110	; ##  ##
+    620  f315		       55		      .byte.b	%01010101	; # # # #
+    621  f316		       55		      .byte.b	%01010101	; # # # #
+    622  f317		       55		      .byte.b	%01010101	; # # # #
+    623  f318		       66		      .byte.b	%01100110	; ##  ##
+    624  f319
+    625  f319		       77		      .byte.b	%01110111	; ### ###
+    626  f31a		       44		      .byte.b	%01000100	; #   #
+    627  f31b		       77		      .byte.b	%01110111	; ### ###
+    628  f31c		       44		      .byte.b	%01000100	; #   #
+    629  f31d		       77		      .byte.b	%01110111	; ### ###
+    630  f31e
+    631  f31e		       77		      .byte.b	%01110111	; ### ###
+    632  f31f		       44		      .byte.b	%01000100	; #   #
+    633  f320		       66		      .byte.b	%01100110	; ##  ##
+    634  f321		       44		      .byte.b	%01000100	; #   #
+    635  f322		       44		      .byte.b	%01000100	; #   #
+    636  f323
+    637  f323				   JetSprite
+    638  f323		       00		      .byte.b	#%00000000	;
+    639  f324		       14		      .byte.b	#%00010100	;   # #
+    640  f325		       7f		      .byte.b	#%01111111	; #######
+    641  f326		       3e		      .byte.b	#%00111110	;  #####
+    642  f327		       1c		      .byte.b	#%00011100	;   ###
+    643  f328		       1c		      .byte.b	#%00011100	;   ###
+    644  f329		       08		      .byte.b	#%00001000	;    #
+    645  f32a		       08		      .byte.b	#%00001000	;    #
+    646  f32b		       08		      .byte.b	#%00001000	;    #
+    647  f32c
+    648  f32c				   JetSpriteTurn
+    649  f32c		       00		      .byte.b	#%00000000	;
+    650  f32d		       08		      .byte.b	#%00001000	;    #
+    651  f32e		       3e		      .byte.b	#%00111110	;  #####
+    652  f32f		       1c		      .byte.b	#%00011100	;   ###
+    653  f330		       1c		      .byte.b	#%00011100	;   ###
+    654  f331		       1c		      .byte.b	#%00011100	;   ###
+    655  f332		       08		      .byte.b	#%00001000	;    #
+    656  f333		       08		      .byte.b	#%00001000	;    #
+    657  f334		       08		      .byte.b	#%00001000	;    #
+    658  f335
+    659  f335				   BomberSprite
+    660  f335		       00		      .byte.b	#%00000000	;
+    661  f336		       08		      .byte.b	#%00001000	;    #
+    662  f337		       08		      .byte.b	#%00001000	;    #
+    663  f338		       2a		      .byte.b	#%00101010	;  # # #
+    664  f339		       3e		      .byte.b	#%00111110	;  #####
+    665  f33a		       7f		      .byte.b	#%01111111	; #######
+    666  f33b		       2a		      .byte.b	#%00101010	;  # # #
+    667  f33c		       08		      .byte.b	#%00001000	;    #
+    668  f33d		       1c		      .byte.b	#%00011100	;   ###
+    669  f33e
+    670  f33e				   JetColor
+    671  f33e		       00		      .byte.b	#$00
+    672  f33f		       fe		      .byte.b	#$FE
+    673  f340		       0c		      .byte.b	#$0C
+    674  f341		       0e		      .byte.b	#$0E
+    675  f342		       0e		      .byte.b	#$0E
+    676  f343		       04		      .byte.b	#$04
+    677  f344		       ba		      .byte.b	#$BA
+    678  f345		       0e		      .byte.b	#$0E
+    679  f346		       08		      .byte.b	#$08
+    680  f347
+    681  f347				   JetColorTurn
+    682  f347		       00		      .byte.b	#$00
+    683  f348		       fe		      .byte.b	#$FE
+    684  f349		       0c		      .byte.b	#$0C
+    685  f34a		       0e		      .byte.b	#$0E
+    686  f34b		       0e		      .byte.b	#$0E
+    687  f34c		       04		      .byte.b	#$04
+    688  f34d		       0e		      .byte.b	#$0E
+    689  f34e		       0e		      .byte.b	#$0E
+    690  f34f		       08		      .byte.b	#$08
+    691  f350
+    692  f350				   BomberColor
+    693  f350		       00		      .byte.b	#$00
+    694  f351		       32		      .byte.b	#$32
+    695  f352		       32		      .byte.b	#$32
+    696  f353		       0e		      .byte.b	#$0E
+    697  f354		       40		      .byte.b	#$40
+    698  f355		       40		      .byte.b	#$40
+    699  f356		       40		      .byte.b	#$40
+    700  f357		       40		      .byte.b	#$40
+    701  f358		       40		      .byte.b	#$40
+    702  f359
+    703  f359							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    704  f359							;; Complete ROM size with exactly 4KB
+    705  f359							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    706  fffc					      org	$FFFC
+    707  fffc		       00 f0		      word.w	Reset	; write 2 bytes with the program reset address
+    708  fffe		       00 f0		      word.w	Reset	; write 2 bytes with the interruption vector

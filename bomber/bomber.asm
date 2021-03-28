@@ -16,6 +16,8 @@ JetXPos byte               ; Player X position
 JetYPos byte               ; Player Y Position
 BomberXPos byte            ; Enemy X Position
 BomberYPos byte            ; Enemy Y Position
+MissileXPos byte           ; Missile X Position
+MissileYPos byte           ; Missile Y Position
 Score byte                 ; 2-digit score stored as BCD
 Timer byte                 ; 2-digit score stored as BCD
 Temp byte                  ; auxiliary variable to store temp score values
@@ -66,6 +68,20 @@ Reset:
     sta Score
     lda #0
     sta Timer
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Declare a MACRO to check if we should dispaly the missile 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    MAC DRAW_MISSILE
+        lda #%00000000
+        cpx MissileYPos      ; compare X (current scanline) with missile Y pos
+        bne .SkipMissileDraw ; if (X != missile Y position), skip draw
+.DrawMissile:
+        lda #%00000010
+        inc MissileYPos
+.SkipMissileDraw:
+        sta ENAM0            ; store the correct value in the TIA missile register
+        ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize pointers to the correct lookup table addresses
@@ -120,28 +136,32 @@ StartFrame:
     ldy #1
     jsr SetObjectXPos      ; set bomber horizontal position
 
+    lda MissileXPos
+    ldy #2
+    jsr SetObjectXPos      ; set missile horizontal position
+
     jsr CalculateDigitOffset ; calculate the scoreboard digit lookup table offset
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Display the scoreboard
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    lda #0                  ; clear TIA registers before each new frame
-    sta PF0
-    sta PF1
-    sta PF2
-    sta GRP0
-    sta GRP1
-    sta CTRLPF
-    sta COLUBK
-
-    lda #$1E
-    sta COLUPF
 
     sta WSYNC
     sta HMOVE              ; apply the horizontal offsets previously set by the routine
 
     lda #0
     sta VBLANK              ; turn off VBLANK
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Display the scoreboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda #0                  ; clear TIA registers before each new frame
+    sta COLUBK
+    sta PF0
+    sta PF1
+    sta PF2
+    sta GRP0
+    sta GRP1
+    sta CTRLPF
+
+    lda #$1E
+    sta COLUPF
 
     ldx #DIGITS_HEIGHT
 .ScoreDigitLoop:
@@ -214,13 +234,15 @@ GameVisibleLine:
     lda #0
     sta PF2
 
-    ldx #83                ; X counts the number of remaining scanlines
+    ldx #85                 ; X counts the number of remaining scanlines
 .GameLineLoop:              ; . has no special meaning, tutor uses it to indicate that this segment is within the above segment
+    DRAW_MISSILE            ; macro to check if we should draw the missile
+
 .AreWeInsideJetSprite:
     txa                     ; transfer X to A
     sec                     ; Set carry flag before subtraction
     sbc JetYPos             ; subtract sprite Y-coordinate
-    cmp JET_HEIGHT          ; are we inside the sprite height
+    cmp #JET_HEIGHT          ; are we inside the sprite height
     bcc .DrawJetSprite      ; if result < SpriteHeight, call the draw routine
     lda #0                  ; else, set lookup index to zero
 .DrawJetSprite:
@@ -237,7 +259,7 @@ GameVisibleLine:
     txa                     ; transfer X to A
     sec                     ; Set carry flag before subtraction
     sbc BomberYPos          ; subtract sprite Y-coordinate
-    cmp BOMBER_HEIGHT       ; are we inside the sprite height
+    cmp #BOMBER_HEIGHT       ; are we inside the sprite height
     bcc .DrawBomberSprite   ; if result < SpriteHeight, call the draw routine
     lda #0                  ; else, set lookup index to zero
 .DrawBomberSprite:
@@ -259,6 +281,17 @@ GameVisibleLine:
     sta WSYNC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Display Overscan
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    lda #2
+    sta VBLANK              ; turn VBLANK on
+    REPEAT 30
+        sta WSYNC           ; recommended lines of VBLANK
+    REPEND
+    lda #0
+    sta VBLANK              ; turn off VBLANK
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Process joystick input for player0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 CheckP0Up:
@@ -269,6 +302,7 @@ CheckP0Up:
     lda JetYPos
     cmp #75
     beq CheckP0Down          ; if JetYPos == 100, jump to next check
+.P0UpPressed:
     inc JetYPos
     lda #0
     sta JetAnimOffset
@@ -281,6 +315,7 @@ CheckP0Down:
     lda JetYPos
     cmp #0
     beq CheckP0Left
+.P0DownPressed:
     dec JetYPos
     lda #0
     sta JetAnimOffset
@@ -293,23 +328,38 @@ CheckP0Left:
     lda JetXPos
     cmp #35
     beq CheckP0Right
+.P0LeftPressed:
     dec JetXPos
-    lda JET_HEIGHT
+    lda #JET_HEIGHT
     sta JetAnimOffset
 
 CheckP0Right:
     lda #%10000000           ; player0 joystick up
     bit SWCHA               
-    bne EndInputCheck        ; if bit pattern doesn't match, jump to
+    bne CheckButtonPressed   ; if bit pattern doesn't match, jump to next
 .checkRightPFLimit:
     lda JetXPos
     cmp #100
-    beq EndInputCheck
+    beq CheckButtonPressed
+.P0RightPressed:
     inc JetXPos
-    lda JET_HEIGHT
+    lda #JET_HEIGHT
     sta JetAnimOffset
 
-EndInputCheck:               ; fallback when no input was performed
+CheckButtonPressed:
+    lda #%10000000
+    bit INPT4
+    bne EndInputCheck       ; if button is not pressed, skip to end
+.ButtonPressed:
+    lda JetYPos
+    clc
+    adc #8                  ; set missile infront of jet
+    sta MissileYPos
+    lda JetXPos
+    clc
+    adc #5                  ; set missile in the middle of the jet
+    sta MissileXPos
+EndInputCheck:              ; fallback when no input was performed
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Calculations to update position for next frame
@@ -325,19 +375,11 @@ UpdateBomberPosition:
     jsr GetRandomBomberPos   ; call subroutine for random x-position
 .SetScoreValues
     sed                     ; enable BCD(decimal) mode
-
-    lda Score
-    clc
-    adc #1
-    sta Score               ; add 1 to score (BCD does not like INC instruction)
-
     lda Timer
     clc
     adc #1
     sta Timer               ; add 1 to timer (BCD does not like INC instruction)
-
     cld                     ; disable BCD(decimal) mode
-
 EndPositionUpdate:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -348,22 +390,27 @@ CheckCollisionP0P1:
     bit CXPPMM              ; check CXPPMM bit 7 with the above pattern
     bne .P0P1Collided       ; if collided, game over
     jsr SetBackgroundColor
-    jmp EndCollisionCheck   ; else, skip to next check
+    jmp CheckCollisionM0P1  ; else, skip to next check
 .P0P1Collided:
     jsr GameOver            ; call GameOver subroutine
+
+CheckCollisionM0P1:
+    lda #%10000000
+    bit CXM0P
+    bne .M0P1Collided
+    jmp EndCollisionCheck
+.M0P1Collided:
+    sed
+    lda Score
+    clc
+    adc #1
+    sta Score
+    cld                     ; increment score using BCD
+    lda #0
+    sta MissileYPos
+
 EndCollisionCheck:
     sta CXCLR               ; clear all collision checks
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Display Overscan
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    lda #2
-    sta VBLANK              ; turn VBLANK on
-    REPEAT 30
-        sta WSYNC           ; recommended lines of VBLANK
-    REPEND
-    lda #0
-    sta VBLANK              ; turn off VBLANK
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loop back to start a brand new frame
